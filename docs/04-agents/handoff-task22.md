@@ -25,7 +25,7 @@ In Task 22, Project 4 ("Bystander") was evolved from an architectural prototype 
 | **D6** | Verifiable Audit Export | `b82e8b7` | Complete | Implemented `GET /api/audit/:id/export?format=json` and `?format=csv`. The CSV export strictly complies with RFC 4180 (proper quoting of fields with commas, quotes, and newlines), and sets `Content-Disposition: attachment`. Tested with round-trip CSV parsing proving that embedded commas and quotes survive intact without column misalignment. |
 | **D7** | Surface Becomes an Application | `1b62fff` | Complete | Transformed UI into a 4-view single-page application (SPA) with accessible hash routing (`#capture`, `#ledger`, `#audit`, `#settings`). Features dark theme styling with WCAG AAA text contrast (>= 6.7:1), fully keyboard-navigable controls, focus-trapped Escape-dismissible purge modal, live REST API integration, and zero hardcoded assertions/percentages/checkmarks. |
 | **D8** | Real MCP Client Demo | `0afcbc3` | Complete | Built standalone runner `ops/mcp-client-demo.mjs` that talks to the live Bystander MCP server over Streamable HTTP on port 3002. Discovers 4 registered tools (`bystander_get_transcript`, `bystander_list_conversations`, `bystander_get_consent_ledger`, `bystander_verify_redactions`), enforces protocol floor `2025-11-25`, and executes live transcript calls against consented and unconsented fixtures. In-process integration test `tests/mcp-client-flow.test.ts` validates the complete client handshake in CI. |
-| **D9** | Negative Probes & Handoff | Pending Commit | Complete | Implemented 4 new negative probes in `services/bystander/tests/negative-probes.test.ts` proving failure under deliberate breakage (D1 schema rejection of forbidden columns, D2 rejection of invalid enrolment payloads, D3 zero-leak purge isolation, D6 RFC 4180 CSV escape survival). Recorded probe failure/pass logs in `docs/04-agents/negative-probes-evidence.md`. Appended Section 6 to `README.md`. Authored this comprehensive handoff document. |
+| **D9** | Negative Probes & Handoff | `3b3b59c` | Complete | Implemented 4 new negative probes in `services/bystander/tests/negative-probes.test.ts` proving failure under deliberate breakage (D1 schema rejection of forbidden columns, D2 rejection of invalid enrolment payloads, D3 zero-leak purge isolation, D6 RFC 4180 CSV escape survival). Recorded probe failure/pass logs in `docs/04-agents/negative-probes-evidence.md`. Appended Section 6 to `README.md`. Authored this comprehensive handoff document. |
 
 ---
 
@@ -43,7 +43,7 @@ In Task 22, Project 4 ("Bystander") was evolved from an architectural prototype 
 | **D6** | `b82e8b7` | `feat(bystander): D6 - audit export in JSON and CSV RFC 4180 formats with comma survival test` |
 | **D7** | `1b62fff` | `feat(bystander): D7 - four-view accessible SPA with live API integration` |
 | **D8** | `0afcbc3` | `feat(bystander): D8 - MCP client demo script with live streamable HTTP flow` |
-| **D9** | *[Current commit]* | `feat(bystander): D9 - negative probes, verified status, and Task 22 handoff` |
+| **D9** | `3b3b59c` | `feat(bystander): D9 - negative probes, verified status, and Task 22 handoff` |
 
 ### 2.2 Cryptographic File Hashes (SHA-256)
 
