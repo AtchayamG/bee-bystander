@@ -183,6 +183,7 @@ projects/04-bee-bystander/
 │   ├── stop-both.cmd              # Clean process termination
 │   ├── probe-protocol-version.mjs # MCP protocol floor verification
 │   ├── probe-bee-live.mjs         # Live TLS + unauthenticated 401 probe (no credentials)
+│   ├── probe-bee-mcp-tools.mjs    # Measures Bee's own MCP floor + tool count (no credentials)
 │   └── video/                     # Automated demo video pipeline
 │       ├── generate-tts.mjs       # Edge Neural TTS narration
 │       ├── generate-cards.mjs     # 1920x1080 typography cards & lower thirds

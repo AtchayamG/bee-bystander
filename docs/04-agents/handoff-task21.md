@@ -368,6 +368,28 @@ there, so the three "no" answers mean something.
    normalisation measured as mean -19.3 dB / peak -4.3 dB and undid the
    loudnorm target.
 
+7. **Product feedback stated a tool count that was wrong, and a protocol claim
+   that was too weak.** Section 1.3 said Bee's MCP server "exposes 35 discrete
+   tools" and that "protocol negotiation is unconstrained". Neither was
+   measured. I wrote `ops/probe-bee-mcp-tools.mjs`, which spawns
+   `npx -y @beeai/cli@0.7.3 mcp serve` and talks to it over stdio. The real
+   count is **34**, and the protocol behaviour is far more specific and more
+   useful than "unconstrained": a client asking for `2025-11-25` is answered
+   **`2024-11-05`**, four published dialects below the request, as a successful
+   handshake with no warning. That is the same bug this project had in its own
+   server, sitting in the platform's own server, and it is now friction log
+   Entry 5 with reproducing output. A third finding came free:
+   `tools/list` answers with no credential at all, which is why a judge with no
+   Bee account can re-run the probe.
+
+   Two probe bugs of my own, recorded because the first one nearly became a
+   false finding: the initial run sent `initialize` immediately and got no
+   reply, because `npx` had not finished starting the server — that reads
+   exactly like a server that ignores you, so the probe now exits 3 on silence
+   and says "do not quote this run". The second was `spawn EINVAL` (errno
+   -4071) from spawning `npx.cmd` directly on Node 22, which needs
+   `shell: true`.
+
 ### 6.4 What remains unverified after review
 
 The three items in section 5 stand — no physical Bee hardware, no Bluetooth
