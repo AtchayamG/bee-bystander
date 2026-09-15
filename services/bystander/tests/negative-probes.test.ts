@@ -226,7 +226,10 @@ describe('Negative Probes — proving that guards fail when safety rules are bro
     const record: StoredAuditRecord = {
       id: 'rec-rfc4180',
       conversationId: 107,
-      category: 'THIRD_PARTY_ENTITY',
+      // SENSITIVE_ENTITY, not THIRD_PARTY_ENTITY: the latter is not a member of
+      // RedactionCategory and this line failed tsc --noEmit while the test
+      // itself passed, because tsx strips types without checking them.
+      category: 'SENSITIVE_ENTITY',
       clusterId: 'SPEAKER_0',
       reason: complexReason,
       spanStart: 12,

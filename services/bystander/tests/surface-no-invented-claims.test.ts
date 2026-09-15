@@ -67,6 +67,47 @@ describe('apps/surface guard against hardcoded claims, checkmarks, and invented 
     assert.deepEqual(hits, [], `Found numeric ?? fallbacks: ${hits.join(', ')}`);
   });
 
+  it('has no numeric fallback disguised as a ternary (x ? x : <number>)', () => {
+    // The || and ?? guards above were passed by
+    //   status?.retentionDays ? status.retentionDays : 30
+    // which does exactly what they forbid: it substitutes a number the server
+    // never sent, and additionally turns a real value of 0 into 30. A guard
+    // that only knows two spellings of a mistake is a guard with a hole in it.
+    const hits = allCleanTs.match(/\?[^?:;{}\n]{0,80}:\s*-?\d[\d.]*\s*[;,)\n]/g) ?? [];
+    assert.deepEqual(
+      hits,
+      [],
+      `Found ternary numeric fallbacks: ${hits.map((h) => h.trim()).join(' | ')}`
+    );
+  });
+
+  it('does not assert database or protocol state as a literal instead of reading it', () => {
+    // Journal mode, foreign-key enforcement and the MCP tool list were all
+    // printed as literal sentences in the settings view. Every one happened to
+    // be true, which is what makes them dangerous: they would have kept saying
+    // so after the underlying thing changed. They now come from
+    // GET /api/status.
+    const banned = [
+      'WAL (Write-Ahead Logging)',
+      'bystander_get_transcript,',
+      'Exposes 4 verified tools'
+    ];
+    for (const phrase of banned) {
+      assert.ok(
+        !allCleanTs.includes(phrase),
+        `Surface asserts runtime state as a literal: "${phrase}" - read it from /api/status instead`
+      );
+    }
+    assert.ok(
+      allCleanTs.includes('storage?.journalMode'),
+      'Journal mode should be read from the status payload'
+    );
+    assert.ok(
+      allCleanTs.includes('mcpTools'),
+      'MCP tool names should be read from the status payload'
+    );
+  });
+
   it('has no hardcoded percentage claim in UI strings (e.g. "99%", "100%")', () => {
     const hits = allCleanTs.match(/\b\d{1,3}%/g) ?? [];
     assert.deepEqual(hits, [], `Found hardcoded percentage claim: ${hits.join(', ')}`);

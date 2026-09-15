@@ -27,11 +27,22 @@ export class BeeApiClient {
     };
   }
 
-  public getStatus(): { code: number; message: string; mode: 'live' | 'fixture'; hasToken: boolean } {
+  public getStatus(): {
+    code: number;
+    message: string;
+    mode: 'live' | 'fixture';
+    hasToken: boolean;
+    endpoint: string;
+  } {
     return {
       code: this.lastStatus.code,
       message: this.lastStatus.message,
       mode: this.token ? 'live' : 'fixture',
+      // The host, never the credential. The settings view showed "Configured
+      // Endpoint: not reported" because this field did not exist, which is the
+      // honest fallback working but a gap on a panel whose whole job is
+      // telling the wearer where their audio is going.
+      endpoint: this.apiBase,
       hasToken: Boolean(this.token)
     };
   }

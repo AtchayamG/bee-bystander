@@ -213,10 +213,86 @@ Following the completion of Task 22 deliverables (D1–D9), the verification mat
 | **SQLite Persistence & Invariants (D1)** | WAL-mode SQLite storage (`bystander.db`); `participants`, `audit_records`, and `events` tables; schema strictly omits any column for removed speech | `services/bystander/tests/persistence.test.ts` (round-trip, idempotency, and schema column validation) | **VERIFIED** (Audit schema invariant proven; round-trip survives DB close/reopen) |
 | **Real Enrolment Flow & Gating Flip (D2)** | `POST /api/consent/enrol`, `PATCH /api/consent/:clusterId`, `DELETE /api/consent/:clusterId` with machine-readable error codes (`INVALID_ROLE`, `INVALID_STATUS`) | `services/bystander/tests/enrolment.test.ts` | **VERIFIED** (Gating immediately flips from APPROVED to REFUSED when speaker is un-enrolled) |
 | **Audit Retention Sweep & Local Purge (D3)** | Automated retention sweeps (`POST /api/retention/sweep`), local conversation purge (`POST /api/retention/purge`), and threshold config (`/api/retention/config`) | `services/bystander/tests/retention.test.ts` | **VERIFIED** (Sweep deletes expired records; purge removes records and logs immutable PURGE event, leaving 0 records) |
-| **Honest Bee API Client Fallback (D4)** | Connects via HTTPS to `https://api.bee.computer/v1` with Amazon Private CA (`PROD_ROOT_CA`); falls back honestly on 401 Unauthorized; never echoes or logs tokens | `services/bystander/tests/client.test.ts` | **VERIFIED** (Honest 401 status captured; zero simulated 200s; token confidentiality verified) |
+| **Honest Bee API Client Fallback (D4)** | Connects via HTTPS to `https://app-api-developer.ce.bee.amazon.dev` with Amazon Private CA (`PROD_ROOT_CA`); falls back honestly on 401 Unauthorized; never echoes or logs tokens | `services/bystander/tests/client.test.ts`, and `node ops\probe-bee-live.mjs` for the raw transport result | **VERIFIED** (Honest 401 status captured; zero simulated 200s. Token confidentiality is verified for `getStatus()` only — see section 6.1) |
 | **7 Distinct Conversation Fixtures (D5)** | 7 schema-identical `@beeai/cli` v0.7.3 fixtures exercising all boundary conditions: ambiguous attribution (104), all UNKNOWN (105), mid-session revocation (106), overlapping PII (107) | `services/bystander/tests/fixtures-branches.test.ts` | **VERIFIED** (All 7 boundary branches trigger exact refusal codes and clean scrub outputs) |
 | **Audit Export in JSON & CSV (D6)** | RFC 4180 compliant CSV export with proper escaping of quotes, commas, and newlines; JSON export; Content-Disposition attachment headers | `services/bystander/tests/audit-export.test.ts` | **VERIFIED** (Headers verified; RFC 4180 round-trip comma survival tested; zero unconsented text in export) |
-| **4-View Accessible Web Application (D7)** | Hash-routed SPA (`#capture`, `#ledger`, `#audit`, `#settings`); WCAG AAA contrast (>= 4.5:1); keyboard accessible; purge modal with focus trapping & Escape dismiss | `services/bystander/tests/surface-no-invented-claims.test.ts` & `apps/surface` production build (`tsc && vite build`) | **VERIFIED** (Zero checkmarks, zero invented numbers/percentages; builds in ~100ms; all views functional) |
+| **4-View Accessible Web Application (D7)** | Hash-routed SPA (`#capture`, `#ledger`, `#audit`, `#settings`); every text pair clears **WCAG AA**, lowest measured **5.67:1**; visible focus on every interactive control; purge modal with focus trapping & Escape dismiss | `services/bystander/tests/surface-no-invented-claims.test.ts`, the production build (`tsc && vite build`), and a Tab-walk plus token contrast measurement in `ops-tools/` | **VERIFIED at AA, not AAA** (Three pairs sit below AAA's 7:1 — danger text 6.65, speaker tag 6.96, danger-on-tint 5.67. Focus visibility was a real defect and is fixed; see section 6.1) |
 | **Streamable HTTP MCP Client Demo (D8)** | Real client connects over Streamable HTTP (`/mcp`), initializes with protocol floor `2025-11-25`, discovers 4 tools, calls `bystander_get_transcript` on consented and unconsented sessions | `node ops/mcp-client-demo.mjs` & `services/bystander/tests/mcp-client-flow.test.ts` | **VERIFIED** (Live run against port 3002 passes; in-process CI test passes) |
 | **Negative Probes (D9)** | 8 negative probes proving that breaking schema, validation, purge isolation, absence, or claims causes tests to fail | `services/bystander/tests/negative-probes.test.ts` & `docs/04-agents/negative-probes-evidence.md` | **VERIFIED** (All 8 probes fail when broken, pass when enabled) |
 | **Live Bee Production API with Real Hardware Token** | End-to-end cloud sync with an active physical wearable hardware token | Remote HTTP call with provisioned hardware bearer token | **UNVERIFIED** (Bee token not provisioned; live endpoint tested via genuine 401 response; all pipeline stages verified against schema-identical local fixtures) |
+
+### 6.1 What the Task 22 review changed
+
+The nine deliverables above are real: the ledger persists across restarts, the
+enrolment flow writes to SQLite, purge deletes and logs, the CSV export is
+RFC 4180 correct, and the MCP client demo opens a genuine Streamable HTTP
+session. Independent review found five defects and one class of documentation
+error, all fixed here.
+
+**The absence guarantee now covers the places Task 22 added.** Persistence, a
+CSV export and a JSON export are three new resting places for speech that did
+not exist when the `originalText` leak was found (section 2.1). An
+orchestrator-written probe ran the same conversation through four consent
+states and searched five surfaces — the API payload, the stored rows, the CSV,
+the JSON, and the raw `.db` and `-wal` files read off disk as bytes — for any
+four-word run of the bystander's sentence. All three suppressing states came
+back clean on all five; the all-consented control leaked, which is what proves
+the search can see text when text is there.
+
+**Fixed: the settings view asserted runtime state instead of reading it.**
+`Journal Mode: WAL (Write-Ahead Logging)`, `Foreign Key Constraints: ON` and
+`Exposes 4 verified tools: bystander_get_transcript, …` were literal sentences
+in the HTML. All three were true, which is exactly what makes them dangerous —
+they would have kept saying so after the pragma or the tool list changed. This
+is the same defect the hardcoded guardrail ticks were in project 2.
+`GET /api/status` now reports `storage.journalMode` and `storage.foreignKeys`
+from `PRAGMA` reads on the open database, and `mcpTools` from the single array
+the four `server.tool()` registrations use.
+
+**Fixed: five form controls had no visible focus indicator.** The enrolment
+form — the main interactive feature of the new ledger view — carried
+`outline: none` with a `:focus` rule that only shifted `border-color` by one
+pixel. A Tab walk recording the computed outline and box-shadow of
+`document.activeElement` at each stop reported `NO VISIBLE FOCUS` for all five.
+Links and buttons were fine throughout. Now every stop shows a 2px ring.
+
+**Fixed: a numeric fallback disguised as a ternary.** The retention field read
+`status?.retentionDays ? status.retentionDays : 30`, which substitutes a number
+the server never sent and turns a real retention window of 0 days into a
+displayed 30. The existing guards scan for `|| <number>` and `?? <number>`, so
+it passed them. There is now a third guard for the ternary spelling, and one
+for asserted database and protocol literals. Both were confirmed by
+reintroducing the defects and watching the suite fail.
+
+**Fixed: a dead status field.** The settings badge read `beeApi.status`, which
+the server has never sent, so `isLive` was permanently false — with a real
+token configured the panel would still have claimed local fixture mode. It now
+reads `beeApi.mode`, and the panel reports the configured endpoint instead of
+`not reported`.
+
+**Fixed: `tsc --noEmit` did not pass.** A negative probe used the category
+`THIRD_PARTY_ENTITY`, which is not a member of `RedactionCategory`. The test
+passed anyway because `tsx` strips types without checking them. Both packages
+now typecheck clean.
+
+**Corrected documentation.** The Task 22 handoff's accessibility figures were
+computed against `#f8fafc`, `#0f172a` and `#3b82f6` — none of which appear in
+this project's stylesheet — and reported ">= 6.7:1 (WCAG AAA)" while listing a
+4.6:1 pair in the same row. Measured against the real tokens, every text pair
+clears AA and the floor is 5.67:1, so the claim in the table above is AA. The
+handoff also described consent statuses (`REFUSED`), roles
+(`consented_participant`) and audit categories (`SPEAKER_SUPPRESSION`,
+`THIRD_PARTY_ENTITY`) that the codebase does not define, plus a pipeline
+latency metric and a SHA-256 digest panel that do not exist in the source. The
+screens were re-shot at 1920x1080 and read directly; `docs/04-agents/handoff-task22.md`
+section 7 lists every correction.
+
+Two things a reader should know about this repository's history. Two commits
+have mixed contents — `7ebfcb2` ("D1 — SQLite persistence") also carries the
+Bee MCP probe and friction log entry 5, and `a18d937` ("measure Bee's own MCP
+server") also carries 157 lines of Express routes — because the orchestrator
+and the worker agent both ran `git add -A` against one working tree within the
+same few minutes. Nothing was lost and the history is linear; the messages
+simply understate what landed. And the demo video linked at the top of this
+README predates Task 22: it shows the single-page surface, not the four-view
+application, and fixture 102's figures have since changed. It is being re-cut.

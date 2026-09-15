@@ -102,10 +102,25 @@ interface AppStatus {
   version: string;
   protocolFloor: string;
   mcpEndpoint: string;
+  // Names the server actually registered, from GET /api/status. Optional so an
+  // older server renders "not reported" instead of a hardcoded list.
+  mcpTools?: string[];
   activeDbPath: string;
+  // Reported by GET /api/status, which reads PRAGMA journal_mode and
+  // PRAGMA foreign_keys off the open database. Optional so a server that
+  // predates the field renders "not reported" rather than a confident literal.
+  storage?: {
+    journalMode: string;
+    foreignKeys: boolean;
+  };
   retentionDays: number;
   beeApi: {
-    status: string;
+    // Matches what GET /api/status actually sends. `status` was declared here
+    // but never sent by the server, so anything reading it rendered
+    // "not reported" - the honest fallback firing on a field that was simply
+    // mistyped rather than missing.
+    mode: 'live' | 'fixture';
+    hasToken: boolean;
     endpoint: string;
     code: number;
     message: string;
@@ -921,8 +936,15 @@ function renderAuditView(): string {
 // VIEW 4: Settings View
 function renderSettingsView(): string {
   const status = appStatus;
-  const retentionDays = status?.retentionDays ? status.retentionDays : 30;
-  const isLive = status?.beeApi.status === 'live';
+  // Not `status?.retentionDays ? status.retentionDays : 30`. That ternary is a
+  // numeric fallback wearing a disguise - it slipped past the guard test, which
+  // scans for `|| <number>` and `?? <number>` - and it turned a real retention
+  // window of 0 days into a displayed 30. Blank until the server reports.
+  const retentionDays = typeof status?.retentionDays === 'number' ? status.retentionDays : '';
+  // `beeApi.status` is not a field the server sends; this read was always
+  // undefined, so the badge said "Local fixture mode" even with a token
+  // configured. The server sends `mode`.
+  const isLive = status?.beeApi.mode === 'live';
 
   return `
     <div class="view-section">
@@ -1000,7 +1022,11 @@ function renderSettingsView(): string {
               <strong>Server Status:</strong> <span class="status-pill consented">Active (Streamable HTTP)</span>
             </div>
             <div style="font-size:11px; color:var(--text-dim); margin-top: 14px;">
-              Exposes 4 verified tools: bystander_get_transcript, bystander_list_conversations, bystander_get_consent_ledger, bystander_verify_redactions.
+              ${
+                status?.mcpTools?.length
+                  ? `Exposes ${status.mcpTools.length} registered tool${status.mcpTools.length === 1 ? '' : 's'}: ${status.mcpTools.map((t) => escapeHtml(t)).join(', ')}.`
+                  : `Registered tools: ${formatField(undefined)}`
+              }
             </div>
           </div>
         </section>
@@ -1019,10 +1045,17 @@ function renderSettingsView(): string {
               </div>
             </div>
             <div style="font-size:13px; margin-bottom: 8px;">
-              <strong>Journal Mode:</strong> <code>WAL (Write-Ahead Logging)</code>
+              <strong>Journal Mode:</strong> <code>${formatField(status?.storage?.journalMode)}</code>
             </div>
             <div style="font-size:13px; margin-bottom: 8px;">
-              <strong>Foreign Key Constraints:</strong> <code>ON</code>
+              <strong>Foreign Key Constraints:</strong>
+              <code>${
+                status?.storage
+                  ? status.storage.foreignKeys
+                    ? 'ON'
+                    : 'OFF'
+                  : formatField(undefined)
+              }</code>
             </div>
           </div>
         </section>

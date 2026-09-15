@@ -7,8 +7,8 @@ import { ConsentLedger } from './consent-ledger.js';
 import { DEFAULT_LEDGER } from './fixtures.js';
 import { Redactor } from './redactor.js';
 import { RefusalEngine } from './refusal.js';
-import { createBystanderMcpServer, PROTOCOL_FLOOR } from './mcp-server.js';
-import { BystanderDatabase, DEFAULT_DB_PATH } from './db.js';
+import { createBystanderMcpServer, PROTOCOL_FLOOR, BYSTANDER_TOOL_NAMES } from './mcp-server.js';
+import { BystanderDatabase, DEFAULT_DB_PATH, readStorageInvariants } from './db.js';
 import type { PipelineResult, StoredAuditRecord } from './types.js';
 
 export interface ServerContext {
@@ -103,7 +103,14 @@ export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
       version: '0.1.0',
       protocolFloor: PROTOCOL_FLOOR,
       mcpEndpoint: '/mcp',
+      // The settings view prints the tool list; it reads this rather than a
+      // sentence typed into the HTML.
+      mcpTools: [...BYSTANDER_TOOL_NAMES],
       activeDbPath: db.dbPath,
+      // Read back out of the live database, not restated. The settings view
+      // prints these, and a printed invariant that is not measured is just a
+      // comment that looks like evidence.
+      storage: readStorageInvariants(db.db),
       retentionDays,
       beeApi: status,
       participants: ledger.list()

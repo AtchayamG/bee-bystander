@@ -100,6 +100,25 @@ export function runMigrations(db: DatabaseType): void {
   `);
 }
 
+/**
+ * Reads the two storage invariants back OUT of the live database rather than
+ * restating them.
+ *
+ * The settings view used to print "WAL (Write-Ahead Logging)" and "ON" as
+ * literals next to a computed database path. Both happened to be true, which is
+ * exactly what makes that kind of line dangerous: it would have kept saying WAL
+ * after someone changed the pragma. Same defect class as the hardcoded
+ * guardrail ticks removed from project 2's surface.
+ */
+export function readStorageInvariants(db: DatabaseType): {
+  journalMode: string;
+  foreignKeys: boolean;
+} {
+  const journal = db.pragma('journal_mode', { simple: true }) as string;
+  const fk = db.pragma('foreign_keys', { simple: true }) as number;
+  return { journalMode: String(journal).toUpperCase(), foreignKeys: fk === 1 };
+}
+
 export function seedParticipantsIfEmpty(
   db: DatabaseType,
   seedData: ParticipantConsent[]

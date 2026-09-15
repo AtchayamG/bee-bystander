@@ -132,10 +132,22 @@ body {
   border-radius: 6px;
   font-size: 13px;
   font-family: inherit;
-  outline: none;
 }
 
-.scenario-select:focus, .form-select:focus, .form-input:focus {
+/*
+ * These five controls used to carry `outline: none` with a :focus rule that
+ * only changed border-color. That cancelled the global :focus-visible ring for
+ * precisely the enrolment form - the main interactive feature of the ledger
+ * view - so a keyboard user tabbing through it had no visible indication of
+ * where they were. A 1px border tint is not a focus indicator.
+ *
+ * Measured with a Tab walk in ops-tools/shoot-p4-views.mjs, which reports the
+ * computed outline and box-shadow of document.activeElement at each stop; all
+ * five read NO VISIBLE FOCUS before this change.
+ */
+.scenario-select:focus-visible, .form-select:focus-visible, .form-input:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
   border-color: var(--color-brand);
 }
 
