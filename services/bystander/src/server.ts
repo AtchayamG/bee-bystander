@@ -102,6 +102,9 @@ export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
       service: 'Bystander Service',
       version: '0.1.0',
       protocolFloor: PROTOCOL_FLOOR,
+      mcpEndpoint: '/mcp',
+      activeDbPath: db.dbPath,
+      retentionDays,
       beeApi: status,
       participants: ledger.list()
     });
@@ -285,7 +288,7 @@ export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
   performRetentionSweep(db, retentionDays);
 
   app.get('/api/retention/config', (_req: Request, res: Response) => {
-    res.json({ retentionDays });
+    res.json({ retentionDays, activeDbPath: db.dbPath });
   });
 
   app.post('/api/retention/config', (req: Request, res: Response) => {

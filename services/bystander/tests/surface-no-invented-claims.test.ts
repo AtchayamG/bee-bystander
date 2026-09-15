@@ -1,54 +1,86 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 
 describe('apps/surface guard against hardcoded claims, checkmarks, and invented numbers', () => {
   const surfaceDir = join(process.cwd(), '..', '..', 'apps', 'surface');
-  const mainTsPath = join(surfaceDir, 'src', 'main.ts');
+  const srcDir = join(surfaceDir, 'src');
   const indexHtmlPath = join(surfaceDir, 'index.html');
 
-  const mainTs = readFileSync(mainTsPath, 'utf8');
+  function getAllFiles(dir: string): string[] {
+    let results: string[] = [];
+    const list = readdirSync(dir);
+    for (const file of list) {
+      const fullPath = join(dir, file);
+      const stat = statSync(fullPath);
+      if (stat && stat.isDirectory()) {
+        results = results.concat(getAllFiles(fullPath));
+      } else {
+        results.push(fullPath);
+      }
+    }
+    return results;
+  }
+
+  const allSrcFiles = getAllFiles(srcDir);
   const indexHtml = readFileSync(indexHtmlPath, 'utf8');
 
   it('reads the surface source files (non-empty)', () => {
-    assert.ok(mainTs.length > 1000, 'main.ts is suspiciously short or empty');
+    assert.ok(allSrcFiles.length > 0, 'No files found in apps/surface/src');
+    for (const filePath of allSrcFiles) {
+      const content = readFileSync(filePath, 'utf8');
+      assert.ok(content.length > 0, `${filePath} is empty`);
+    }
     assert.ok(indexHtml.length > 100, 'index.html is suspiciously short or empty');
   });
 
-  // Strip block comments and single-line comments
-  const cleanTs = mainTs.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+  // Collect all TS/JS source content stripped of comments
+  const tsFiles = allSrcFiles.filter((f) => f.endsWith('.ts') || f.endsWith('.js'));
+  const allCleanTs = tsFiles
+    .map((filePath) => {
+      const raw = readFileSync(filePath, 'utf8');
+      return raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+    })
+    .join('\n');
 
   it('has no hardcoded checkmark character (✓ or &#10003; or &check;) in UI source', () => {
-    assert.ok(!cleanTs.includes('✓'), 'Found literal "✓" in main.ts');
-    assert.ok(!cleanTs.includes('&#10003;'), 'Found HTML checkmark entity in main.ts');
+    for (const filePath of allSrcFiles) {
+      const raw = readFileSync(filePath, 'utf8');
+      const clean = raw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+      assert.ok(!clean.includes('✓'), `Found literal "✓" in ${filePath}`);
+      assert.ok(!clean.includes('&#10003;'), `Found HTML checkmark entity in ${filePath}`);
+      assert.ok(!clean.includes('&check;'), `Found HTML checkmark entity in ${filePath}`);
+    }
     assert.ok(!indexHtml.includes('✓'), 'Found literal "✓" in index.html');
+    assert.ok(!indexHtml.includes('&#10003;'), 'Found HTML checkmark entity in index.html');
+    assert.ok(!indexHtml.includes('&check;'), 'Found HTML checkmark entity in index.html');
   });
 
   it('has no numeric fallback || <number> anywhere', () => {
-    const hits = cleanTs.match(/\|\|\s*'?-?\d[\d.]*/g) ?? [];
+    const hits = allCleanTs.match(/\|\|\s*'?-?\d[\d.]*/g) ?? [];
     assert.deepEqual(hits, [], `Found numeric || fallbacks: ${hits.join(', ')}`);
   });
 
   it('has no numeric fallback ?? <number> anywhere', () => {
-    const hits = cleanTs.match(/\?\?\s*'?-?\d[\d.]*/g) ?? [];
+    const hits = allCleanTs.match(/\?\?\s*'?-?\d[\d.]*/g) ?? [];
     assert.deepEqual(hits, [], `Found numeric ?? fallbacks: ${hits.join(', ')}`);
   });
 
   it('has no hardcoded percentage claim in UI strings (e.g. "99%", "100%")', () => {
-    const hits = cleanTs.match(/\b\d{1,3}%/g) ?? [];
+    const hits = allCleanTs.match(/\b\d{1,3}%/g) ?? [];
     assert.deepEqual(hits, [], `Found hardcoded percentage claim: ${hits.join(', ')}`);
   });
 
   it('renders "not reported" when a field is missing, never a fabricated substitute', () => {
-    assert.ok(cleanTs.includes('not reported'), 'Missing "not reported" fallback mechanism');
+    assert.ok(allCleanTs.includes('not reported'), 'Missing "not reported" fallback mechanism');
   });
 
   it('binds computed pipeline properties directly from data', () => {
-    assert.ok(cleanTs.includes('data.rawUtteranceCount'));
-    assert.ok(cleanTs.includes('data.redactedUtteranceCount'));
-    assert.ok(cleanTs.includes('audit.totalRedactedChars'));
-    assert.ok(cleanTs.includes('audit.totalRedactedWords'));
-    assert.ok(cleanTs.includes('audit.removals.length'));
+    assert.ok(allCleanTs.includes('data.rawUtteranceCount'));
+    assert.ok(allCleanTs.includes('data.redactedUtteranceCount'));
+    assert.ok(allCleanTs.includes('audit.totalRedactedChars'));
+    assert.ok(allCleanTs.includes('audit.totalRedactedWords'));
+    assert.ok(allCleanTs.includes('audit.removals.length'));
   });
 });

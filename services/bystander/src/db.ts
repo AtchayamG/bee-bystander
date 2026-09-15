@@ -216,8 +216,10 @@ export class SqliteParticipantRepository implements ParticipantRepository {
 
 export class BystanderDatabase {
   public readonly db: DatabaseType;
+  public readonly dbPath: string;
 
   constructor(dbPath: string = DEFAULT_DB_PATH, initialSeed?: ParticipantConsent[]) {
+    this.dbPath = dbPath;
     if (dbPath !== ':memory:') {
       const dir = path.dirname(dbPath);
       if (!fs.existsSync(dir)) {
