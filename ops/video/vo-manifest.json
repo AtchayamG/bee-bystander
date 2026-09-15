@@ -1,0 +1,43 @@
+{
+  "voice": "en-US-AndrewNeural",
+  "rate": "+6%",
+  "totalDurationSec": 137.712,
+  "segments": [
+    {
+      "id": "vo-01",
+      "text": "The Bee wearable is an always-listening ambient microphone worn into everyday spaces containing people who never consented to be recorded. Bystander is an open-source consent and redaction layer built for the Bee developer ecosystem. Instead of assuming consent away, it maintains a verifiable consent ledger per speaker cluster and protects bystander privacy.",
+      "mp3": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\04-bee-bystander\\ops\\video\\vo\\vo-01.mp3",
+      "durationSec": 21.432
+    },
+    {
+      "id": "vo-02",
+      "text": "Phase 1 research probed the live Bee API. The findings shaped this architecture: Bee's ASR produces anonymous cluster tags like SPEAKER 0 and SPEAKER 1, but no participant identity or wearer profile. And live calls without a paired device honestly return HTTP 401 Unauthorized using Amazon's private root CA. Bystander embraces this reality: it runs a real HTTPS client with verified offline fallback, clearly badging authentication status.",
+      "mp3": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\04-bee-bystander\\ops\\video\\vo\\vo-02.mp3",
+      "durationSec": 29.928
+    },
+    {
+      "id": "vo-03",
+      "text": "Here in the live surface, we see an ambient capture. Alice and Bob are consented participants, but Bob shares sensitive third-party details. Bystander scrubs the email, phone, and named entities with boundary-aware redaction, preventing subword false positives like Ann in annual. Every redaction produces a machine-readable audit entry with exact spans and category tags.",
+      "mp3": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\04-bee-bystander\\ops\\video\\vo\\vo-03.mp3",
+      "durationSec": 23.016
+    },
+    {
+      "id": "vo-04",
+      "text": "In Scenario 2, an unconsented bystander at a nearby table is picked up discussing medical details. Because cluster SPEAKER 2 is unknown, Bystander strictly enforces the hard rule: unknown is never treated as consent. The bystander's speech is completely suppressed by absence, and the downstream summarisation engine loudly refuses to generate a summary, naming the machine-readable reason.",
+      "mp3": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\04-bee-bystander\\ops\\video\\vo\\vo-04.mp3",
+      "durationSec": 24.552
+    },
+    {
+      "id": "vo-05",
+      "text": "Bystander exposes this entire pipeline over the Model Context Protocol, holding the required 2025-11-25 protocol floor via Streamable HTTP. Every number on this screen is computed from the live pipeline payload: zero hardcoded checkmarks, zero invented percentages, and zero unmeasured claims. Bystander turns ambient audio from an unchecked surveillance risk into a consent-governed system.",
+      "mp3": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\04-bee-bystander\\ops\\video\\vo\\vo-05.mp3",
+      "durationSec": 26.616
+    },
+    {
+      "id": "vo-06",
+      "text": "Bystander demonstrates that wearable AI agents can respect bystander privacy and verify consent without physical hardware gates. Full source code, test suite, and research logs are open source.",
+      "mp3": "D:\\Work\\Codex\\Hackathon Projects\\Amazon Developer Hackathon\\projects\\04-bee-bystander\\ops\\video\\vo\\vo-06.mp3",
+      "durationSec": 12.168
+    }
+  ]
+}

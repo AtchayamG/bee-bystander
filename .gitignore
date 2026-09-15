@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+.env
+.env.local
+*.log
+work/
+ops/video/work/
+ops/video/cards/
+ops/video/vo/
+ops/video/frames/
+ops/video/shots/
+.DS_Store
+Thumbs.db
