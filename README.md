@@ -1,5 +1,8 @@
 # Bystander — Consent-Aware Capture Layer for Bee
 
+
+**▶ [Watch the 2:24 demo](https://youtu.be/o85SZu3wlWM)** — an unenrolled voice is picked up, suppressed by absence, and the summariser refuses out loud with a machine-readable reason code.
+
 > **Amazon Developer Hackathon 2026 (Build, Ship, Shape)**  
 > **Track**: Bee Track (Ambient AI / Wearables)  
 > **Entrant**: Atchayam G (Solo Entrant)  

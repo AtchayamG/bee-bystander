@@ -4,6 +4,9 @@
 > **Project**: Bystander — Consent-Aware Capture Layer for Bee  
 > **Entrant**: Atchayam G (Solo Entrant)  
 > **Licence**: MIT Open Source  
+> **Demo video (2:24, public)**: https://youtu.be/o85SZu3wlWM  
+> Local master: `docs/06-demo-submission/bystander-demo.mp4` — gitignored, since
+> the deliverable is the YouTube link rather than a binary re-committed per cut.
 
 This document is written for two readers:
 1. **The judge who will not run anything**: an executive summary explaining what the project proves, how the safety invariants work, and the exact verified evidence captured from the system.

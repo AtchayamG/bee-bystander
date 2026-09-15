@@ -103,9 +103,11 @@ Bee, Bee wearable, ambient AI, wearables, privacy, consent, bystander privacy, r
 - **Thumbnail**: upload `docs/assets/thumbnail-youtube.png`
 - **Comments**: leave on
 
-## After upload
+## Uploaded
 
-Paste the watch URL back and it goes into:
-1. The Devpost submission's video field
-2. The P4 README, under the header block
-3. `docs/06-demo-submission/walkthrough.md`, next to the local file reference
+**https://youtu.be/o85SZu3wlWM** — public, 2026-09-15. Title and custom
+thumbnail confirmed live via the oEmbed endpoint and
+`i.ytimg.com/vi/o85SZu3wlWM/maxresdefault.jpg`.
+
+Carried into: the README header block, `walkthrough.md`, and the Devpost
+submission's video field.
