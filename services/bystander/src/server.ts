@@ -9,7 +9,7 @@ import { Redactor } from './redactor.js';
 import { RefusalEngine } from './refusal.js';
 import { createBystanderMcpServer, PROTOCOL_FLOOR } from './mcp-server.js';
 import { BystanderDatabase, DEFAULT_DB_PATH } from './db.js';
-import type { PipelineResult } from './types.js';
+import type { PipelineResult, StoredAuditRecord } from './types.js';
 
 export interface ServerContext {
   app: express.Express;
@@ -36,6 +36,51 @@ export function performRetentionSweep(
     createdAt: now
   });
   return { sweptAuditRecords: count, cutoffDate, timestamp: now };
+}
+
+export function formatAuditRecordsCsv(records: StoredAuditRecord[]): string {
+  const headers = [
+    'id',
+    'conversation_id',
+    'category',
+    'cluster_id',
+    'reason',
+    'span_start',
+    'span_end',
+    'char_count',
+    'word_count',
+    'replacement_text',
+    'created_at'
+  ];
+
+  const escapeCsvField = (val: string | number | null | undefined): string => {
+    if (val === null || val === undefined) return '';
+    const str = String(val);
+    if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  const rows = records.map((r) =>
+    [
+      r.id,
+      r.conversationId,
+      r.category,
+      r.clusterId,
+      r.reason,
+      r.spanStart,
+      r.spanEnd,
+      r.charCount,
+      r.wordCount,
+      r.replacementText,
+      r.createdAt
+    ]
+      .map(escapeCsvField)
+      .join(',')
+  );
+
+  return [headers.join(','), ...rows].join('\r\n');
 }
 
 export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
@@ -307,6 +352,47 @@ export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
     }
     const records = db.getAuditRecords(id);
     return res.json({ conversationId: id, records });
+  });
+
+  // D6: Audit Export (JSON and CSV RFC 4180 with Content-Disposition)
+  app.get('/api/audit/:conversationId/export', async (req: Request, res: Response) => {
+    const rawId = req.params.conversationId;
+    const id = parseInt(Array.isArray(rawId) ? rawId[0] : (rawId as string), 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({
+        error: 'conversationId must be a positive integer',
+        code: 'INVALID_CONVERSATION_ID'
+      });
+    }
+
+    let records = db.getAuditRecords(id);
+    if (records.length === 0) {
+      const convResult = await client.getConversation(id);
+      if (convResult.conversation) {
+        const { audit } = Redactor.redactConversation(convResult.conversation, ledger);
+        if (audit.removals.length > 0) {
+          db.saveAuditRecords(id, audit.removals);
+          records = db.getAuditRecords(id);
+        }
+      }
+    }
+
+    const format = String(req.query.format || 'json').toLowerCase();
+
+    if (format === 'csv') {
+      const csv = formatAuditRecordsCsv(records);
+      res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+      res.setHeader('Content-Disposition', `attachment; filename="audit-conversation-${id}.csv"`);
+      return res.send(csv);
+    }
+
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="audit-conversation-${id}.json"`);
+    return res.json({
+      conversationId: id,
+      count: records.length,
+      records
+    });
   });
 
   app.get('/api/pipeline/:id', async (req: Request, res: Response) => {
