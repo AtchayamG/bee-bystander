@@ -24,6 +24,20 @@ interface McpSession {
   createdAt: number;
 }
 
+export function performRetentionSweep(
+  db: BystanderDatabase,
+  retentionDays: number
+): { sweptAuditRecords: number; cutoffDate: number; timestamp: number } {
+  const now = Date.now();
+  const cutoffDate = now - retentionDays * 24 * 60 * 60 * 1000;
+  const count = db.deleteAuditRecordsOlderThan(cutoffDate);
+  db.logEvent('RETENTION_SWEEP', {
+    detail: `Swept ${count} audit records older than ${retentionDays} days (cutoff: ${new Date(cutoffDate).toISOString()})`,
+    createdAt: now
+  });
+  return { sweptAuditRecords: count, cutoffDate, timestamp: now };
+}
+
 export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
   const app = express();
   app.use(cors({ origin: '*' }));
@@ -214,6 +228,85 @@ export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
       detail: `Updated consent for ${clusterId}: ${status}`
     });
     return res.json({ ok: true, participant: ledger.getParticipant(clusterId) });
+  });
+
+  // D3: Retention and Purge API
+  let retentionDays = parseInt(process.env.RETENTION_DAYS || '30', 10);
+  if (isNaN(retentionDays) || retentionDays < 1) {
+    retentionDays = 30;
+  }
+
+  // Run initial retention sweep on server startup
+  performRetentionSweep(db, retentionDays);
+
+  app.get('/api/retention/config', (_req: Request, res: Response) => {
+    res.json({ retentionDays });
+  });
+
+  app.post('/api/retention/config', (req: Request, res: Response) => {
+    const days = parseInt(req.body?.retentionDays, 10);
+    if (isNaN(days) || days < 1) {
+      return res.status(400).json({
+        error: 'retentionDays must be an integer >= 1',
+        code: 'INVALID_RETENTION_DAYS'
+      });
+    }
+    retentionDays = days;
+    db.logEvent('RETENTION_CONFIG', {
+      detail: `Configured retention threshold to ${days} days`
+    });
+    return res.json({ ok: true, retentionDays });
+  });
+
+  app.post('/api/retention/sweep', (req: Request, res: Response) => {
+    const rawDays = req.body?.retentionDays;
+    const days = rawDays !== undefined ? parseInt(rawDays, 10) : retentionDays;
+    if (isNaN(days) || days < 1) {
+      return res.status(400).json({
+        error: 'retentionDays must be an integer >= 1',
+        code: 'INVALID_RETENTION_DAYS'
+      });
+    }
+    const result = performRetentionSweep(db, days);
+    return res.json({ ok: true, ...result });
+  });
+
+  app.post('/api/retention/purge', (req: Request, res: Response) => {
+    const rawId = req.body?.conversationId;
+    const conversationId = parseInt(rawId, 10);
+    if (isNaN(conversationId) || conversationId <= 0) {
+      return res.status(400).json({
+        error: 'conversationId must be a positive integer',
+        code: 'INVALID_CONVERSATION_ID'
+      });
+    }
+
+    const deletedCount = db.deleteAuditRecordsByConversation(conversationId);
+    const event = db.logEvent('PURGE', {
+      conversationId,
+      detail: `Purged ${deletedCount} stored audit records for conversation ${conversationId}`
+    });
+
+    return res.json({
+      ok: true,
+      conversationId,
+      deletedAuditRecords: deletedCount,
+      eventId: event.id,
+      purgedAt: event.createdAt
+    });
+  });
+
+  app.get('/api/audit/:conversationId', (req: Request, res: Response) => {
+    const rawId = req.params.conversationId;
+    const id = parseInt(Array.isArray(rawId) ? rawId[0] : (rawId as string), 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({
+        error: 'conversationId must be a positive integer',
+        code: 'INVALID_CONVERSATION_ID'
+      });
+    }
+    const records = db.getAuditRecords(id);
+    return res.json({ conversationId: id, records });
   });
 
   app.get('/api/pipeline/:id', async (req: Request, res: Response) => {
