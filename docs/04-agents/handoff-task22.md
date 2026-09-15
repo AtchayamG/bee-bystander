@@ -47,7 +47,13 @@ In Task 22, Project 4 ("Bystander") was evolved from an architectural prototype 
 
 ### 2.2 Cryptographic File Hashes (SHA-256)
 
-Computed via Windows `certutil -hashfile <path> SHA256`:
+Computed via Windows `certutil -hashfile <path> SHA256`.
+
+> **Stale as of the review commit.** Eight of these ten files were changed by
+> the orchestrator review in section 7 — `db.ts`, `server.ts`, `mcp-server.ts`,
+> `client.ts`, `main.ts`, `style.css`, `negative-probes.test.ts` and
+> `README.md`. The hashes below are the Task 22 state, not the current tree.
+> Recompute with `certutil` against HEAD before quoting any of them.
 
 | File Path | SHA-256 Checksum | Purpose / Description |
 | :--- | :--- | :--- |
