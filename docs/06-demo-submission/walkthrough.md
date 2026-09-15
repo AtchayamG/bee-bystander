@@ -4,7 +4,10 @@
 > **Project**: Bystander — Consent-Aware Capture Layer for Bee  
 > **Entrant**: Atchayam G (Solo Entrant)  
 > **Licence**: MIT Open Source  
-> **Demo video (2:24, public)**: https://youtu.be/o85SZu3wlWM  
+> **Demo video (2:47)**: re-cut for the four-view application — enrolment,
+> un-enrolment flipping the gate, and a real purge, all as live clicks. Awaiting
+> re-upload; the currently published cut is https://youtu.be/o85SZu3wlWM, which
+> narrates the older single-page surface.  
 > Local master: `docs/06-demo-submission/bystander-demo.mp4` — gitignored, since
 > the deliverable is the YouTube link rather than a binary re-committed per cut.
 

@@ -167,9 +167,9 @@ const CARDS = [
       <!DOCTYPE html><html><head><meta charset="utf-8"><style>${LT_CSS}</style></head>
       <body>
         <div class="lt-card">
-          <div class="lt-kicker">SCENARIO 1 &bull; CONSENTED SPEAKERS</div>
-          <div class="lt-title">Boundary-Aware PII and Third-Party Entity Redaction</div>
-          <div class="lt-sub">Email, phone, and named entities scrubbed with zero substring false positives.</div>
+          <div class="lt-kicker">CAPTURE &bull; SCRUB, SUPPRESS, REFUSE</div>
+          <div class="lt-title">Boundary-Aware Redaction, Then a Loud Refusal</div>
+          <div class="lt-sub">Ann never matches inside annual. An unenrolled cluster is suppressed and the gate refuses.</div>
         </div>
       </body></html>
     `
@@ -180,9 +180,9 @@ const CARDS = [
       <!DOCTYPE html><html><head><meta charset="utf-8"><style>${LT_CSS}</style></head>
       <body>
         <div class="lt-card" style="border-left-color: #f43f5e;">
-          <div class="lt-kicker" style="color: #f43f5e;">SCENARIO 2 &bull; UNCONSENTED BYSTANDER</div>
-          <div class="lt-title">Total Absence Suppression & Loud Machine Refusal</div>
-          <div class="lt-sub">Unknown cluster SPEAKER_2 speech completely redacted; summary blocked with reason code.</div>
+          <div class="lt-kicker" style="color: #f43f5e;">CONSENT LEDGER &bull; STATE THAT PERSISTS</div>
+          <div class="lt-title">Enrol, Un-enrol, and Watch the Gate Follow</div>
+          <div class="lt-sub">Written to SQLite with an immutable event row. Un-enrolled means unknown, which means refused.</div>
         </div>
       </body></html>
     `
@@ -193,9 +193,22 @@ const CARDS = [
       <!DOCTYPE html><html><head><meta charset="utf-8"><style>${LT_CSS}</style></head>
       <body>
         <div class="lt-card" style="border-left-color: #a855f7;">
-          <div class="lt-kicker" style="color: #c084fc;">INTERACTION &bull; MODEL CONTEXT PROTOCOL</div>
-          <div class="lt-title">Live Ledger Reactivity & Verifiable Audit Trail</div>
-          <div class="lt-sub">Every metric computed live from the pipeline payload. Zero hardcoded claims.</div>
+          <div class="lt-kicker" style="color: #c084fc;">AUDIT &amp; COMPLIANCE &bull; SQLITE</div>
+          <div class="lt-title">Records Without the Speech, Export, and a Real Purge</div>
+          <div class="lt-sub">Category, cluster, span and size - never the removed text. JSON and RFC 4180 CSV.</div>
+        </div>
+      </body></html>
+    `
+  },
+  {
+    name: 'lt-06.png',
+    html: `
+      <!DOCTYPE html><html><head><meta charset="utf-8"><style>${LT_CSS}</style></head>
+      <body>
+        <div class="lt-card" style="border-left-color: #34d399;">
+          <div class="lt-kicker" style="color: #34d399;">TRANSPARENCY &bull; MEASURED, NOT ASSERTED</div>
+          <div class="lt-title">PRAGMA Reads, Server Tool List, Protocol Floor</div>
+          <div class="lt-sub">Storage invariants and MCP tools come from the running system, not from the page.</div>
         </div>
       </body></html>
     `

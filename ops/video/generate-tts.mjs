@@ -10,48 +10,64 @@ if (!existsSync(VO)) mkdirSync(VO, { recursive: true });
 const VOICE = 'en-US-AndrewNeural';
 const RATE = '+6%';
 
+// Seven segments: two title cards, one per application view, and a close.
+//
+// Rewritten for the four-view application. The previous script narrated a
+// single scrolling page and described features - persistence, enrolment,
+// purge, export - that had not been built yet. Every claim below is visible on
+// screen in the clip it accompanies.
 export const SEGMENTS = [
   {
     id: 'vo-01',
     text:
-      "The Bee wearable is an always-listening ambient microphone worn into everyday spaces containing people who never consented to be recorded. " +
-      "Bystander is an open-source consent and redaction layer built for the Bee developer ecosystem. " +
-      "Instead of assuming consent away, it maintains a verifiable consent ledger per speaker cluster and protects bystander privacy."
+      "An always-on microphone worn into a room has a second set of people in front of it: the ones who never agreed to anything. " +
+      "Bee's developer surface is built entirely around the person wearing it. " +
+      "Bystander is the layer for everyone else in the room - a consent ledger per speaker, and a summariser that refuses out loud rather than guessing."
   },
   {
     id: 'vo-02',
     text:
-      "Phase 1 research probed the live Bee API. The findings shaped this architecture: " +
-      "Bee's ASR produces anonymous cluster tags like SPEAKER 0 and SPEAKER 1, but no participant identity or wearer profile. " +
-      "And live calls without a paired device honestly return HTTP 401 Unauthorized using Amazon's private root CA. " +
-      "Bystander embraces this reality: it runs a real HTTPS client with verified offline fallback, clearly badging authentication status."
+      "It has to be a ledger because consent cannot be looked up. " +
+      "Bee's transcript API returns anonymous acoustic clusters - SPEAKER 0, SPEAKER 1, sometimes an empty string - with no identity and no flag marking the wearer. " +
+      "Live calls from this machine return a real HTTP 401, and the host needs Amazon's private root CA before the connection survives the handshake at all. " +
+      "Both of those are reproducible from a script in the repository."
   },
   {
     id: 'vo-03',
     text:
-      "Here in the live surface, we see an ambient capture. Alice and Bob are consented participants, but Bob shares sensitive third-party details. " +
-      "Bystander scrubs the email, phone, and named entities with boundary-aware redaction, preventing subword false positives like Ann in annual. " +
-      "Every redaction produces a machine-readable audit entry with exact spans and category tags."
+      "The capture view runs the pipeline. Alice and Bob both consented, but Bob names a third party who did not, " +
+      "so the email, the phone number and the name are scrubbed with boundary-aware matching - Ann never matches inside annual. " +
+      "Switch to the cafe, and an unenrolled cluster speaks. Unknown is never treated as consent: the turn is suppressed, " +
+      "and the gate refuses with a machine-readable reason code instead of quietly summarising around it."
   },
   {
     id: 'vo-04',
     text:
-      "In Scenario 2, an unconsented bystander at a nearby table is picked up discussing medical details. " +
-      "Because cluster SPEAKER 2 is unknown, Bystander strictly enforces the hard rule: unknown is never treated as consent. " +
-      "The bystander's speech is completely suppressed by absence, and the downstream summarisation engine loudly refuses to generate a summary, naming the machine-readable reason."
+      "Consent is state, so it needs somewhere to live. The ledger view enrols a speaker cluster with a role and a status and writes it to SQLite - " +
+      "the event log underneath shows the initial seed and every retention sweep since. " +
+      "Un-enrol a consented speaker and that cluster falls back to unknown, which means the capture view's gate flips to refused. " +
+      "None of that is a special case. It is the same rule, applied to a ledger that changed."
   },
   {
     id: 'vo-05',
     text:
-      "Bystander exposes this entire pipeline over the Model Context Protocol, holding the required 2025-11-25 protocol floor via Streamable HTTP. " +
-      "Every number on this screen is computed from the live pipeline payload: zero hardcoded checkmarks, zero invented percentages, and zero unmeasured claims. " +
-      "Bystander turns ambient audio from an unchecked surveillance risk into a consent-governed system."
+      "The audit trail is read back out of the database. Each record carries the category, the cluster, the character span and the size of what was removed - " +
+      "and deliberately not the text, because an audit that reprints what it removed is not an audit. Export is JSON or RFC 4180 CSV. " +
+      "And purge matters more than it looks: Bee's conversations endpoint is read-only, so a revocation can never delete anything upstream. " +
+      "A local purge is the only place the word forget can mean anything."
   },
   {
     id: 'vo-06',
     text:
-      "Bystander demonstrates that wearable AI agents can respect bystander privacy and verify consent without physical hardware gates. " +
-      "Full source code, test suite, and research logs are open source."
+      "Everything on the settings view is read rather than asserted. The journal mode and the foreign-key state come from PRAGMA queries on the open database. " +
+      "The tool list comes from the server, not from a sentence typed into the page. " +
+      "And the protocol floor is measured, not claimed: a client asking for an older dialect is raised to 2025-11-25."
+  },
+  {
+    id: 'vo-07',
+    text:
+      "Forty-eight tests across ten suites, four reproducible probe scripts, " +
+      "and an absence check that searches the API payload, both exports, and the database file itself. All of it open source."
   }
 ];
 

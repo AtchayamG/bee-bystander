@@ -32,13 +32,15 @@ const clipInfo = (id) => {
 const PAD = 1.4;
 const ff = (args) => execFileSync('ffmpeg', ['-y', '-hide_banner', '-loglevel', 'error', ...args], { stdio: 'inherit' });
 
+// Seven segments: two cards, one clip per application view, one close card.
 const TIMELINE = [
   { id: 'vo-01', kind: 'card', src: join(CARDS, 'card-open.png'), dur: voDur('vo-01') + 1.0 },
   { id: 'vo-02', kind: 'card', src: join(CARDS, 'card-probe.png'), dur: voDur('vo-02') + 1.0 },
   { id: 'vo-03', kind: 'clip', clipId: 'clip-03', lt: join(CARDS, 'lt-03.png'), dur: clipInfo('clip-03').durationSec },
   { id: 'vo-04', kind: 'clip', clipId: 'clip-04', lt: join(CARDS, 'lt-04.png'), dur: clipInfo('clip-04').durationSec },
   { id: 'vo-05', kind: 'clip', clipId: 'clip-05', lt: join(CARDS, 'lt-05.png'), dur: clipInfo('clip-05').durationSec },
-  { id: 'vo-06', kind: 'card', src: join(CARDS, 'card-close.png'), dur: voDur('vo-06') + 2.5 }
+  { id: 'vo-06', kind: 'clip', clipId: 'clip-06', lt: join(CARDS, 'lt-06.png'), dur: clipInfo('clip-06').durationSec },
+  { id: 'vo-07', kind: 'card', src: join(CARDS, 'card-close.png'), dur: voDur('vo-07') + 2.5 }
 ];
 
 console.log('\n=== Assembling Bystander Demo Video ===');
