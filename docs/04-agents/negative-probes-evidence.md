@@ -1211,3 +1211,158 @@ ok 3 - apps/surface guard against hardcoded claims, checkmarks, and invented num
 # skipped 0
 # todo 0
 # duration_ms 365.3853\n```\n
+
+---
+
+# Task 22 Negative Probes Evidence (D1, D2, D3, D6)
+
+This section records the four negative probes introduced in Task 22, verifying persistence schema invariants, enrolment gating, purge isolation, and RFC 4180 export safety.
+
+## Probe D1: SQLite Schema Invariant (Unauthorized Column Rejection)
+
+**Intervention**: Altered SQLite schema in `PROBE D1` by executing `ALTER TABLE audit_records ADD COLUMN original_text TEXT`, permitting unauthorized insertion of removed text without throwing an exception.
+
+**Broken Test Run** (Exit Code: 1):
+```text
+# Subtest: Negative Probes — proving that guards fail when safety rules are broken
+    # Subtest: PROBE D1: an audit record INSERT containing an unauthorized column (e.g. original_text) is rejected by SQLite schema
+    not ok 5 - PROBE D1: an audit record INSERT containing an unauthorized column (e.g. original_text) is rejected by SQLite schema
+      ---
+      duration_ms: 2.5933
+      type: 'test'
+      location: 'D:\Work\Codex\Hackathon Projects\Amazon Developer Hackathon\projects\04-bee-bystander\services\bystander\tests\negative-probes.test.ts:82:3'
+      failureType: 'testCodeFailure'
+      error: 'Missing expected exception.'
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected:
+      operator: 'throws'
+      ...
+1..8
+not ok 7 - Negative Probes — proving that guards fail when safety rules are broken
+# tests 46
+# suites 10
+# pass 45
+# fail 1
+```
+
+**Reverted Clean Run** (Exit Code: 0):
+```text
+    # Subtest: PROBE D1: an audit record INSERT containing an unauthorized column (e.g. original_text) is rejected by SQLite schema
+    ok 5 - PROBE D1: an audit record INSERT containing an unauthorized column (e.g. original_text) is rejected by SQLite schema
+      ---
+      duration_ms: 2.169
+      type: 'test'
+      ...
+```
+
+---
+
+## Probe D2: Enrolment Validation & Row Prevention (Invalid Role/Status)
+
+**Intervention**: Modified assertion to expect HTTP 201 on an enrolment request with invalid role `ADMINISTRATOR`.
+
+**Broken Test Run** (Exit Code: 1):
+```text
+    # Subtest: PROBE D2: an enrolment request with an unknown role or status returns HTTP 400 and does NOT insert a row
+    not ok 6 - PROBE D2: an enrolment request with an unknown role or status returns HTTP 400 and does NOT insert a row
+      ---
+      duration_ms: 46.0505
+      type: 'test'
+      location: 'D:\Work\Codex\Hackathon Projects\Amazon Developer Hackathon\projects\04-bee-bystander\services\bystander\tests\negative-probes.test.ts:115:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        400 !== 201
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 201
+      actual: 400
+      operator: 'strictEqual'
+```
+
+**Reverted Clean Run** (Exit Code: 0):
+```text
+    # Subtest: PROBE D2: an enrolment request with an unknown role or status returns HTTP 400 and does NOT insert a row
+    ok 6 - PROBE D2: an enrolment request with an unknown role or status returns HTTP 400 and does NOT insert a row
+      ---
+      duration_ms: 49.8225
+      type: 'test'
+      ...
+```
+
+---
+
+## Probe D3: Purge Isolation & Zero-Deletion Guarantee
+
+**Intervention**: Modified assertion to expect 5 deleted records when purging non-existent conversation 99999 (`deletedAuditRecords === 5`).
+
+**Broken Test Run** (Exit Code: 1):
+```text
+    # Subtest: PROBE D3: a purge request for a non-existent conversation returns 0 deletions and leaves other conversations untouched
+    not ok 7 - PROBE D3: a purge request for a non-existent conversation returns 0 deletions and leaves other conversations untouched
+      ---
+      duration_ms: 8.08
+      type: 'test'
+      location: 'D:\Work\Codex\Hackathon Projects\Amazon Developer Hackathon\projects\04-bee-bystander\services\bystander\tests\negative-probes.test.ts:168:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Expected values to be strictly equal:
+        
+        0 !== 5
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 5
+      actual: 0
+      operator: 'strictEqual'
+```
+
+**Reverted Clean Run** (Exit Code: 0):
+```text
+    # Subtest: PROBE D3: a purge request for a non-existent conversation returns 0 deletions and leaves other conversations untouched
+    ok 7 - PROBE D3: a purge request for a non-existent conversation returns 0 deletions and leaves other conversations untouched
+      ---
+      duration_ms: 10.5491
+      type: 'test'
+      ...
+```
+
+---
+
+## Probe D6: RFC 4180 CSV Export Round-Trip Fidelity
+
+**Intervention**: Injected a naive comma split `csv.split('\r\n')[1].split(',')` on the data row containing embedded quotes, commas, and newlines.
+
+**Broken Test Run** (Exit Code: 1):
+```text
+    # Subtest: PROBE D6: a CSV export with an entity containing embedded commas/quotes/newlines is round-tripped through an RFC 4180 parser and asserts field count matches
+    not ok 8 - PROBE D6: a CSV export with an entity containing embedded commas/quotes/newlines is round-tripped through an RFC 4180 parser and asserts field count matches
+      ---
+      duration_ms: 0.5949
+      type: 'test'
+      location: 'D:\Work\Codex\Hackathon Projects\Amazon Developer Hackathon\projects\04-bee-bystander\services\bystander\tests\negative-probes.test.ts:222:3'
+      failureType: 'testCodeFailure'
+      error: |-
+        Naive comma split should fail due to embedded commas
+        
+        1 !== 11
+        
+      code: 'ERR_ASSERTION'
+      name: 'AssertionError'
+      expected: 11
+      actual: 1
+      operator: 'strictEqual'
+```
+
+**Reverted Clean Run** (Exit Code: 0):
+```text
+    # Subtest: PROBE D6: a CSV export with an entity containing embedded commas/quotes/newlines is round-tripped through an RFC 4180 parser and asserts field count matches
+    ok 8 - PROBE D6: a CSV export with an entity containing embedded commas/quotes/newlines is round-tripped through an RFC 4180 parser and asserts field count matches
+      ---
+      duration_ms: 0.416
+      type: 'test'
+      ...
+```

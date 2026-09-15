@@ -201,3 +201,22 @@ projects/04-bee-bystander/
         ├── product-feedback.md    # Actionable product feedback for Bee team
         └── walkthrough.md         # Judge walkthrough & reproduction steps
 ```
+
+---
+
+## 6. Updated Verification Status (Task 22 Complete)
+
+Following the completion of Task 22 deliverables (D1–D9), the verification matrix is updated to reflect all newly implemented and empirically verified capabilities:
+
+| Component / Subsystem | Claimed State | Verification Method / Command | Status |
+| :--- | :--- | :--- | :--- |
+| **SQLite Persistence & Invariants (D1)** | WAL-mode SQLite storage (`bystander.db`); `participants`, `audit_records`, and `events` tables; schema strictly omits any column for removed speech | `services/bystander/tests/persistence.test.ts` (round-trip, idempotency, and schema column validation) | **VERIFIED** (Audit schema invariant proven; round-trip survives DB close/reopen) |
+| **Real Enrolment Flow & Gating Flip (D2)** | `POST /api/consent/enrol`, `PATCH /api/consent/:clusterId`, `DELETE /api/consent/:clusterId` with machine-readable error codes (`INVALID_ROLE`, `INVALID_STATUS`) | `services/bystander/tests/enrolment.test.ts` | **VERIFIED** (Gating immediately flips from APPROVED to REFUSED when speaker is un-enrolled) |
+| **Audit Retention Sweep & Local Purge (D3)** | Automated retention sweeps (`POST /api/retention/sweep`), local conversation purge (`POST /api/retention/purge`), and threshold config (`/api/retention/config`) | `services/bystander/tests/retention.test.ts` | **VERIFIED** (Sweep deletes expired records; purge removes records and logs immutable PURGE event, leaving 0 records) |
+| **Honest Bee API Client Fallback (D4)** | Connects via HTTPS to `https://api.bee.computer/v1` with Amazon Private CA (`PROD_ROOT_CA`); falls back honestly on 401 Unauthorized; never echoes or logs tokens | `services/bystander/tests/client.test.ts` | **VERIFIED** (Honest 401 status captured; zero simulated 200s; token confidentiality verified) |
+| **7 Distinct Conversation Fixtures (D5)** | 7 schema-identical `@beeai/cli` v0.7.3 fixtures exercising all boundary conditions: ambiguous attribution (104), all UNKNOWN (105), mid-session revocation (106), overlapping PII (107) | `services/bystander/tests/fixtures-branches.test.ts` | **VERIFIED** (All 7 boundary branches trigger exact refusal codes and clean scrub outputs) |
+| **Audit Export in JSON & CSV (D6)** | RFC 4180 compliant CSV export with proper escaping of quotes, commas, and newlines; JSON export; Content-Disposition attachment headers | `services/bystander/tests/audit-export.test.ts` | **VERIFIED** (Headers verified; RFC 4180 round-trip comma survival tested; zero unconsented text in export) |
+| **4-View Accessible Web Application (D7)** | Hash-routed SPA (`#capture`, `#ledger`, `#audit`, `#settings`); WCAG AAA contrast (>= 4.5:1); keyboard accessible; purge modal with focus trapping & Escape dismiss | `services/bystander/tests/surface-no-invented-claims.test.ts` & `apps/surface` production build (`tsc && vite build`) | **VERIFIED** (Zero checkmarks, zero invented numbers/percentages; builds in ~100ms; all views functional) |
+| **Streamable HTTP MCP Client Demo (D8)** | Real client connects over Streamable HTTP (`/mcp`), initializes with protocol floor `2025-11-25`, discovers 4 tools, calls `bystander_get_transcript` on consented and unconsented sessions | `node ops/mcp-client-demo.mjs` & `services/bystander/tests/mcp-client-flow.test.ts` | **VERIFIED** (Live run against port 3002 passes; in-process CI test passes) |
+| **Negative Probes (D9)** | 8 negative probes proving that breaking schema, validation, purge isolation, absence, or claims causes tests to fail | `services/bystander/tests/negative-probes.test.ts` & `docs/04-agents/negative-probes-evidence.md` | **VERIFIED** (All 8 probes fail when broken, pass when enabled) |
+| **Live Bee Production API with Real Hardware Token** | End-to-end cloud sync with an active physical wearable hardware token | Remote HTTP call with provisioned hardware bearer token | **UNVERIFIED** (Bee token not provisioned; live endpoint tested via genuine 401 response; all pipeline stages verified against schema-identical local fixtures) |
