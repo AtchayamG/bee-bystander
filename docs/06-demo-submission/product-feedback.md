@@ -31,13 +31,41 @@
 - **Severity / Verdict**: Good CRUD for notes/todos; insufficient for consent-aware speech governance.
 
 ### 1.3 Bee MCP Server (`bee mcp serve`)
+
+Everything in this section is measured, not read. Reproduce with
+`node ops\probe-bee-mcp-tools.mjs`, which spawns
+`npx -y @beeai/cli@0.7.3 mcp serve`, initialises over stdio and lists tools.
+
 - **What Worked**:
-  * Exposes 35 discrete tools covering status, search, facts, todos, activity, and transcripts.
-  * Includes local client connectors for Claude, Claude Code, and Codex (`bee mcp connect <client>`).
+  * Exposes **34** discrete tools covering status, search, facts, todos,
+    activity, photos, voice notes, locations, insights and transcripts. Counted
+    from a live `tools/list`, not from the docs.
+  * `tools/list` answers **without any credential**, so a developer can discover
+    the whole surface before pairing a device. That is a genuinely good
+    onboarding property and the reason this probe is reproducible by a judge
+    with no Bee account.
+  * Includes local client connectors for Claude, Claude Code, and Codex
+    (`bee mcp connect <client>`).
 - **What Needs Improvement**:
-  * Protocol negotiation is unconstrained; defaults to older spec dialects without holding a protocol floor.
-  * MCP tools return raw upstream transcripts with no option to filter out third-party PII or non-consenting speakers before ingestion into LLM context windows.
-- **Severity / Verdict**: Comprehensive tool coverage, but passes all ambient audio through indiscriminately.
+  * **The server does not hold a protocol floor, and this is measurable.** A
+    client that asks to initialise at `2025-11-25` — the version this
+    hackathon sets as its minimum — is answered `2024-11-05`, four dialects
+    below the request, with no error and no warning:
+    ```text
+      client requested protocolVersion : 2025-11-25
+      server negotiated                : 2024-11-05
+    ```
+    A client that trusts the negotiated value is then speaking a 2024 dialect
+    while believing it agreed to a 2025 one. Our own server had the same bug
+    and we only found it because the rules made us measure it; the platform's
+    own server has it too.
+  * MCP tools return raw upstream transcripts with no option to filter out
+    third-party PII or non-consenting speakers before ingestion into LLM
+    context windows. `bee_get_conversation_transcript` will hand an agent every
+    word a bystander said.
+- **Severity / Verdict**: Comprehensive tool coverage and unusually friendly
+  discovery, undercut by a silent protocol downgrade and by passing all ambient
+  audio through indiscriminately.
 
 ---
 

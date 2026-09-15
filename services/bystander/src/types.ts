@@ -141,3 +141,26 @@ export interface PipelineResult {
     message: string;
   };
 }
+
+export interface StoredAuditRecord {
+  id: string;
+  conversationId: number;
+  category: RedactionCategory;
+  clusterId: string;
+  reason: string;
+  spanStart: number;
+  spanEnd: number;
+  charCount: number;
+  wordCount: number;
+  replacementText: string;
+  createdAt: number;
+}
+
+export interface EventRecord {
+  id: string;
+  kind: string;
+  clusterId?: string | null;
+  conversationId?: number | null;
+  detail?: string | null;
+  createdAt: number;
+}

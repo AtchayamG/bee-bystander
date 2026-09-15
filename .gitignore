@@ -5,6 +5,8 @@ build/
 .env.local
 *.log
 work/
+services/bystander/data/
+data/
 ops/video/work/
 ops/video/cards/
 ops/video/vo/

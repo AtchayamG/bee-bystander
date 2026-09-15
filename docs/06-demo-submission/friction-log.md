@@ -71,3 +71,54 @@ Every entry below documents an issue that actively cost development time on this
 * **Severity**: **Medium.** A developer claiming compliance with the 2025-11-25 spec floor in their hackathon submission may unwittingly serve 2024 or early 2025 protocol dialects to judges and clients.
 * **Workaround**: Implemented request body rewriting during the `initialize` handshake in `services/bystander/src/server.ts`, raising any sub-floor `protocolVersion` to `2025-11-25`. Verified via `ops/probe-protocol-version.mjs`.
 * **Suggested fix**: Add a `minProtocolVersion` parameter to `StreamableHTTPServerTransportOptions` in the MCP TypeScript SDK to let servers reject or upgrade sub-floor clients cleanly.
+
+---
+
+### Entry 5: Bee's Own MCP Server Silently Answers a 2025-11-25 Request With 2024-11-05
+
+* **Task attempted**: Before claiming that Bystander holds the hackathon's
+  `2025-11-25` MCP protocol floor, check the same thing about the platform's own
+  MCP server, so the claim is calibrated against Bee rather than only against
+  ourselves.
+* **Steps taken**: Reproduce with `node ops\probe-bee-mcp-tools.mjs`. It spawns
+  `npx -y @beeai/cli@0.7.3 mcp serve`, sends a JSON-RPC `initialize` over stdio
+  asking for `protocolVersion: "2025-11-25"`, then calls `tools/list`. No
+  credential is sent.
+  ```text
+  Bee MCP server  (npx -y @beeai/cli@0.7.3 mcp serve), stdio transport
+
+    client requested protocolVersion : 2025-11-25
+    server negotiated                : 2024-11-05
+    authorization sent               : none
+    tools/list                       : 34 tools, unauthenticated
+  ```
+* **Expected vs actual**: Expected either `2025-11-25`, or a refusal naming the
+  highest version the server actually speaks. Got `2024-11-05` — four published
+  dialects below the request — returned as a successful handshake. There is no
+  error, no warning, and nothing in the response that flags the downgrade as a
+  downgrade. A client that does what the spec tells it to do and trusts the
+  negotiated version is now speaking 2024 while believing it agreed to 2025.
+* **Severity**: **Medium**, and higher than it looks. It is not a crash; it is a
+  correctness claim that quietly becomes false. Bystander had exactly this bug
+  in its own server (Entry 4) and only found it because the rules forced a
+  measurement. Any entrant to this hackathon who writes "conforms to
+  2025-11-25" on the strength of the SDK's advertised `LATEST_PROTOCOL_VERSION`
+  is likely wrong, and so is anyone assuming the platform's own server is a safe
+  reference.
+* **Workaround**: None available to a client. A client cannot force a floor; it
+  can only compare the version it asked for against the version it got and
+  refuse to continue. Bystander does the server-side half — it rewrites
+  sub-floor `initialize` requests up to `2025-11-25` — and
+  `ops/probe-protocol-version.mjs` proves it, which is why that probe exists as
+  a checked-in artefact rather than a paragraph.
+* **Suggested fix**: Two things, either of which would close it. (1) Have
+  `bee mcp serve` negotiate the highest version both sides support rather than
+  falling to the SDK's `DEFAULT_NEGOTIATED_PROTOCOL_VERSION`. (2) Upstream, add
+  a `minProtocolVersion` option to `StreamableHTTPServerTransportOptions` and
+  its stdio equivalent in the MCP TypeScript SDK, so a server can decline a
+  sub-floor client instead of silently obliging it. Entry 4 asks for the same
+  SDK change from the other direction; one fix serves both.
+* **Credit where due**: `tools/list` answering with no credential at all is a
+  real kindness to developers — the entire 34-tool surface is discoverable
+  before a device is paired, which is why the probe above is reproducible by
+  someone with no Bee account. Keep that.

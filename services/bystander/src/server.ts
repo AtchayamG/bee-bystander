@@ -8,12 +8,14 @@ import { DEFAULT_LEDGER } from './fixtures.js';
 import { Redactor } from './redactor.js';
 import { RefusalEngine } from './refusal.js';
 import { createBystanderMcpServer, PROTOCOL_FLOOR } from './mcp-server.js';
+import { BystanderDatabase, DEFAULT_DB_PATH } from './db.js';
 import type { PipelineResult } from './types.js';
 
 export interface ServerContext {
   app: express.Express;
   client: BeeApiClient;
   ledger: ConsentLedger;
+  db: BystanderDatabase;
 }
 
 interface McpSession {
@@ -22,13 +24,14 @@ interface McpSession {
   createdAt: number;
 }
 
-export function createServer(): ServerContext {
+export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
   const app = express();
   app.use(cors({ origin: '*' }));
   app.use(express.json());
 
+  const db = new BystanderDatabase(dbPath, DEFAULT_LEDGER);
   const client = new BeeApiClient();
-  const ledger = new ConsentLedger(DEFAULT_LEDGER);
+  const ledger = new ConsentLedger(DEFAULT_LEDGER, db.getParticipantRepository());
 
   // In-memory MCP sessions
   const sessions = new Map<string, McpSession>();
@@ -101,6 +104,10 @@ export function createServer(): ServerContext {
       mode: convResult.mode,
       apiStatus: convResult.apiStatus
     };
+
+    if (audit.removals.length > 0) {
+      db.saveAuditRecords(conv.id, audit.removals);
+    }
 
     res.json(pipelineResult);
   });
@@ -252,5 +259,5 @@ export function createServer(): ServerContext {
     return session.transport.handleRequest(req, res);
   });
 
-  return { app, client, ledger };
+  return { app, client, ledger, db };
 }

@@ -1,17 +1,34 @@
 import type { ParticipantConsent, ConsentStatus, ParticipantRole, Utterance } from './types.js';
+import type { ParticipantRepository } from './db.js';
 
 export class ConsentLedger {
   private participants: Map<string, ParticipantConsent>;
+  private repository?: ParticipantRepository;
 
-  constructor(initialParticipants: ParticipantConsent[] = []) {
+  constructor(initialParticipants: ParticipantConsent[] = [], repository?: ParticipantRepository) {
+    this.repository = repository;
     this.participants = new Map();
-    for (const p of initialParticipants) {
-      this.participants.set(p.clusterId, { ...p });
+    if (this.repository) {
+      const stored = this.repository.list();
+      if (stored.length > 0) {
+        for (const p of stored) {
+          this.participants.set(p.clusterId, { ...p });
+        }
+      } else {
+        for (const p of initialParticipants) {
+          this.participants.set(p.clusterId, { ...p });
+          this.repository.set(p);
+        }
+      }
+    } else {
+      for (const p of initialParticipants) {
+        this.participants.set(p.clusterId, { ...p });
+      }
     }
   }
 
   public getStatus(clusterId: string): ConsentStatus {
-    const participant = this.participants.get(clusterId);
+    const participant = this.getParticipant(clusterId);
     if (!participant) {
       // Hard rule: UNKNOWN is never treated as consent
       return 'UNKNOWN';
@@ -31,21 +48,50 @@ export class ConsentLedger {
     status: ConsentStatus,
     notes?: string
   ): void {
-    this.participants.set(clusterId, {
+    const participant: ParticipantConsent = {
       clusterId,
       name,
       role,
       status,
       updatedAt: Date.now(),
       notes
-    });
+    };
+    this.participants.set(clusterId, participant);
+    if (this.repository) {
+      this.repository.set(participant);
+    }
+  }
+
+  public unenrol(clusterId: string): boolean {
+    this.participants.delete(clusterId);
+    if (this.repository) {
+      return this.repository.delete(clusterId);
+    }
+    return true;
   }
 
   public getParticipant(clusterId: string): ParticipantConsent | undefined {
+    if (this.repository) {
+      const p = this.repository.get(clusterId);
+      if (p) {
+        this.participants.set(clusterId, p);
+        return p;
+      }
+      this.participants.delete(clusterId);
+      return undefined;
+    }
     return this.participants.get(clusterId);
   }
 
   public list(): ParticipantConsent[] {
+    if (this.repository) {
+      const list = this.repository.list();
+      this.participants.clear();
+      for (const p of list) {
+        this.participants.set(p.clusterId, p);
+      }
+      return list;
+    }
     return Array.from(this.participants.values());
   }
 
@@ -63,3 +109,4 @@ export class ConsentLedger {
     return false;
   }
 }
+
