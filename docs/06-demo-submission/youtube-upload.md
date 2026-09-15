@@ -125,12 +125,41 @@ Bee, Bee wearable, ambient AI, wearables, privacy, consent, bystander privacy, r
 - Thumbnail: upload `docs/assets/thumbnail-youtube.png`
 - Comments: leave on
 
-## After upload
+## Uploaded
 
-Paste the new watch URL back. It replaces https://youtu.be/o85SZu3wlWM in:
-1. The Devpost submission's video field (the entry stays editable to the deadline)
-2. The README header block
-3. `docs/06-demo-submission/walkthrough.md`
+**https://youtu.be/dwu7O8YLK7w** — public, 2026-09-15. Title and custom
+thumbnail confirmed live via the oEmbed endpoint and
+`i.ytimg.com/vi/dwu7O8YLK7w/maxresdefault.jpg`.
 
-The old video can stay up or be unlisted — it is not wrong, only out of date.
-Nothing else links to it once the three places above are updated.
+Carried into the README header, `walkthrough.md`, and the Devpost submission's
+video field. Nothing in this repository links to the previous cut any more.
+
+### Devpost renders a cached embed — CHECK THIS BEFORE THE DEADLINE
+
+`software[video_url]` stores the new URL (verified by reloading the edit form),
+but the public project page kept rendering an iframe for the **old** video id.
+Devpost keeps a denormalised embed separate from the field, and it did not
+refresh on save. Three attempts failed to force it:
+
+1. Re-saving the field with the new `youtu.be/` URL — field updated, embed stale.
+2. Clearing the field and saving, intending to re-add it — the clear did not
+   persist, because the video link is a required field.
+3. Saving the canonical `https://www.youtube.com/watch?v=` form so the cache key
+   would differ — field updated, embed still stale.
+
+So this is Devpost-side and time-based, not a lost save. Re-check the public
+page nearer the deadline; if the iframe still points at `o85SZu3wlWM`, ask
+Devpost support to refresh the embed rather than deleting and recreating the
+submission. **This is also the reason not to delete the old video from YouTube
+yet** — while that embed is live, deleting the video would leave the submission
+page playing a dead frame.
+
+### The superseded cut
+
+`https://youtu.be/o85SZu3wlWM` narrated the single-page surface. It is not
+wrong, only out of date. Recommended: **unlist rather than delete.** Unlisting
+takes it out of search and suggestions so nobody lands on the older app by
+accident, while any link already shared — it sat on the Devpost page for a few
+hours — still resolves instead of returning a dead video. Deleting is
+irreversible and buys nothing over unlisting. Only one video needs to be
+public for the rules, and that is the one above.

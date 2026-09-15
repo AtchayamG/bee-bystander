@@ -1,13 +1,7 @@
 # Bystander — Consent-Aware Capture Layer for Bee
 
 
-**▶ [Watch the demo](https://youtu.be/o85SZu3wlWM)** — an unenrolled voice is picked up, suppressed by absence, and the summariser refuses out loud with a machine-readable reason code.
-
-> A 2:47 re-cut for the four-view application is built and awaiting upload: it
-> records the enrolment form being typed into, a consented speaker being
-> un-enrolled, and the same conversation flipping from APPROVED to REFUSED
-> because the ledger changed — plus a real purge. The link above still points at
-> the earlier cut, which narrates the older single-page surface.
+**▶ [Watch the 2:47 demo](https://youtu.be/dwu7O8YLK7w)** — a speaker is enrolled, another is un-enrolled, and the same conversation flips from APPROVED to REFUSED because the ledger changed. Then a real purge: 6 records deleted, 0 verified remaining.
 
 > **Amazon Developer Hackathon 2026 (Build, Ship, Shape)**  
 > **Track**: Bee Track (Ambient AI / Wearables)  
