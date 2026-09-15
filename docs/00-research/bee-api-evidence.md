@@ -210,6 +210,6 @@ Because Bee conversations and daily summaries are read-only upstream, **Bystande
   - `~/.bee/` credentials directory: **DOES NOT EXIST** (`Test-Path "$env:USERPROFILE\.bee"` evaluated to `False`)
   - No physical Bee device is paired to this machine.
 - **Handling in Shipped Code**:
-  - `services/bystander/client.ts` implements a real HTTP client targeting `https://app-api-developer.ce.bee.amazon.dev/` with `PROD_ROOT_CA`.
+  - `services/bystander/src/client.ts` implements a real HTTP client targeting `https://app-api-developer.ce.bee.amazon.dev/` with `PROD_ROOT_CA`.
   - When no token is configured, the client attempts the request, honestly logs the HTTP `401 Unauthorized` response, and gracefully falls back to a verified offline fixture set for testing and demonstration.
   - The UI and CLI explicitly display: `Bee API: 401 Unauthorized (No token configured) — Running in verified offline fixture mode`. No mock is hidden in the live path; the status is reported truthfully.
