@@ -11,8 +11,17 @@ describe('Bystander Redaction & Gating Pipeline', () => {
     const ledger = new ConsentLedger(DEFAULT_LEDGER);
     const conv1 = FIXTURE_CONVERSATIONS[0]; // Alice & Bob, mentions Carol, email, phone
 
-    const { redactedText, redactedUtterances, audit } = Redactor.redactConversation(conv1, ledger);
-    const serialized = JSON.stringify({ redactedText, redactedUtterances });
+    const result = Redactor.redactConversation(conv1, ledger);
+    const { redactedText, redactedUtterances, audit } = result;
+
+    // Serialise EVERYTHING a caller can receive, audit included, minus rawText
+    // which exists only for the local before/after view and is never returned
+    // by a tool. Scoping this to { redactedText, redactedUtterances } is what
+    // let the audit carry every removed span verbatim while this test passed:
+    // audit.removals[].originalText held the exact words, and
+    // bystander_get_transcript hands audit.removals to its caller.
+    const { rawText: _localOnly, ...returnable } = result;
+    const serialized = JSON.stringify(returnable);
 
     // ABSENCE assertions - string must not appear anywhere in serialized output
     assert.ok(!serialized.includes('carol@partner-network.org'), 'Email leaked into serialized output');
@@ -28,8 +37,9 @@ describe('Bystander Redaction & Gating Pipeline', () => {
     const ledger = new ConsentLedger(DEFAULT_LEDGER);
     const conv2 = FIXTURE_CONVERSATIONS[1]; // Cafe ambient bystander SPEAKER_2
 
-    const { redactedText, redactedUtterances } = Redactor.redactConversation(conv2, ledger);
-    const serialized = JSON.stringify({ redactedText, redactedUtterances });
+    const result2 = Redactor.redactConversation(conv2, ledger);
+    const { rawText: _local2, ...returnable2 } = result2;
+    const serialized = JSON.stringify(returnable2);
 
     // Bystander unconsented speech must NOT appear anywhere in output
     assert.ok(!serialized.includes('biopsy test results'), 'Bystander private speech leaked');
@@ -70,16 +80,44 @@ describe('Bystander Redaction & Gating Pipeline', () => {
       'Audit category counts do not sum to total removals'
     );
 
-    // 2. totalRedactedChars matches sum of originalText lengths
-    const computedChars = audit.removals.reduce((sum, r) => sum + r.originalText.length, 0);
+    // 2. totalRedactedChars matches the sum of the per-entry counts
+    const computedChars = audit.removals.reduce((sum, r) => sum + r.charCount, 0);
     assert.equal(audit.totalRedactedChars, computedChars, 'totalRedactedChars mismatch');
 
     // 3. totalRedactedWords matches sum of word counts
-    const computedWords = audit.removals.reduce(
-      (sum, r) => sum + r.originalText.trim().split(/\s+/).filter(Boolean).length,
-      0
-    );
+    const computedWords = audit.removals.reduce((sum, r) => sum + r.wordCount, 0);
     assert.equal(audit.totalRedactedWords, computedWords, 'totalRedactedWords mismatch');
+  });
+
+  it('no redaction entry carries the text it removed, in any field', () => {
+    // The structural version of the absence test. Even if a future change adds
+    // a field, this fails unless every value on a removal entry is a number, a
+    // short label, or the placeholder that replaced the content.
+    const ledger = new ConsentLedger(DEFAULT_LEDGER);
+    for (const conv of FIXTURE_CONVERSATIONS) {
+      const raw = conv.transcriptions.flatMap((t) => t.utterances).map((u) => u.text);
+      const { audit } = Redactor.redactConversation(conv, ledger);
+
+      for (const entry of audit.removals) {
+        assert.ok(
+          !Object.prototype.hasOwnProperty.call(entry, 'originalText'),
+          'A removal entry has an originalText field again'
+        );
+        const values = JSON.stringify(entry);
+        for (const utteranceText of raw) {
+          // No removal entry may contain a whole utterance, and no entry may
+          // contain any run of 4+ words from one.
+          const words = utteranceText.split(/\s+/).filter(Boolean);
+          for (let i = 0; i + 4 <= words.length; i++) {
+            const run = words.slice(i, i + 4).join(' ');
+            assert.ok(
+              !values.includes(run),
+              `Removal entry ${entry.id} contains a 4-word run of source speech: "${run}"`
+            );
+          }
+        }
+      }
+    }
   });
 
   it('guarantees substring safety: word-list matching does not match subwords', () => {

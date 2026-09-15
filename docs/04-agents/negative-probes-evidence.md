@@ -1,4 +1,25 @@
-# Negative Probes Evidence Log\n\nThis log records every negative probe: breaking each safety invariant deliberately, demonstrating test failure, reverting, and demonstrating clean test pass.\n\n## Probe 1: Absence Verification (Leaked Sensitive Text)\n**Intervention**: Injected unconsented email `carol@partner-network.org` into redacted output in `redactor.ts`.\n**Broken Test Run** (Exit Code: 1):\n```text\n> bee-bystander-service@0.1.0 test
+# Negative Probes Evidence Log
+
+This log records every negative probe: breaking each safety invariant
+deliberately, demonstrating test failure, reverting, and demonstrating clean
+test pass.
+
+> **Note on the counts below.** Every raw run in this file reports
+> `# tests 17`, because these probes were run before an 18th test
+> (`'no redaction entry carries the text it removed, in any field'`) was added
+> during orchestrator review. The logs are left exactly as they were produced
+> rather than edited to match the current count. The current suite is 18/18;
+> see section 6 of `handoff-task21.md` for the two probes run against the new
+> guards.
+
+## Probe 1: Absence Verification (Leaked Sensitive Text)
+
+**Intervention**: Injected unconsented email `carol@partner-network.org` into redacted output in `redactor.ts`.
+
+**Broken Test Run** (Exit Code: 1):
+
+```text
+> bee-bystander-service@0.1.0 test
 > tsx --test tests/**/*.test.ts
 
 TAP version 13

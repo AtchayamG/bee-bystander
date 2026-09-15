@@ -13,11 +13,17 @@ Every entry below documents an issue that actively cost development time on this
 ### Entry 1: Production Developer API Requires an Undocumented Private Root CA
 
 * **Task attempted**: Connect a standard TypeScript HTTPS client to the production Bee developer API endpoint (`https://app-api-developer.ce.bee.amazon.dev/v1/me`).
-* **Steps taken**: Followed the official API documentation at `https://docs.bee.computer/docs/proxy` and attempted standard Node.js `fetch()` and `https.request()` calls. Both failed immediately before any HTTP status was exchanged:
+* **Steps taken**: Followed the official API documentation at `https://docs.bee.computer/docs/proxy` and attempted standard Node.js `fetch()` and `https.request()` calls. Both fail immediately, before any HTTP status is exchanged. Reproduce with `node ops\probe-bee-live.mjs`, which sends no credentials:
   ```text
-  Error: unable to get local issuer certificate
-  code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE'
+  GET https://app-api-developer.ce.bee.amazon.dev/v1/me  (no Authorization header sent)
+
+    system trust store only (no custom CA)
+      -> transport error: SELF_SIGNED_CERT_IN_CHAIN self-signed certificate in certificate chain
+    PROD_ROOT_CA supplied
+      -> HTTP 401  body: {"error":"unauthorized"}
   ```
+  Both the `fetch()` (undici) and `https.request()` paths report the same code on Node v22.22.3. The exact OpenSSL code a developer sees depends on their runtime and trust store — `UNABLE_TO_VERIFY_LEAF_SIGNATURE` and `UNABLE_TO_GET_ISSUER_CERT_LOCALLY` are the other common shapes — but the outcome is the same: the connection dies before HTTP.
+
   Searched `docs.bee.computer` for "certificate", "CA", "TLS", or "SSL" — zero documentation exists regarding custom certificates. Only by cloning the official CLI repository (`https://github.com/bee-computer/bee-cli`) and inspecting `sources/certs.ts` did we discover an embedded PEM root certificate (`PROD_ROOT_CA`, CN=`BeeCertificateAuthority`, OU=`Trust and Privacy`).
 * **Expected vs actual**: Expected a public developer REST API to terminate TLS with a publicly trusted Certificate Authority (e.g. Amazon Trust Services, DigiCert, Let's Encrypt). Instead, the production API relies on an internal private CA that fails in any standard runtime trust store unless explicitly configured via custom TLS agents.
 * **Severity**: **High.** Any developer attempting to build a custom service, serverless backend, or web integration outside of the pre-packaged `@beeai/cli` binary will immediately hit a hard TLS failure with no explanation in the developer documentation.

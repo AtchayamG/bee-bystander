@@ -132,7 +132,15 @@ for (let i = 0; i < audioTracks.length; i++) {
 const mixInputs = audioTracks.map((_, i) => `[a${i}]`).join('');
 const filterComplex =
   filterComplexParts.join('') +
-  `${mixInputs}amix=inputs=${audioTracks.length}:normalize=0,loudnorm=I=-16:TP=-1.5:LRA=11[aout]`;
+  // Deliver 48 kHz stereo. Without this the mix inherits the mono 96 kHz layout
+  // of the TTS mp3s, which is an odd delivery format and differs from the other
+  // three submission videos in this entry.
+  // pan, not aformat: aformat's mono->stereo upmix applies the usual -3 dB
+  // per-channel power normalisation, which measured as mean -19.3 dB / peak
+  // -4.3 dB and undid the loudnorm target. pan copies c0 to both channels at
+  // unity gain, so the measured loudness stays where loudnorm put it.
+  `${mixInputs}amix=inputs=${audioTracks.length}:normalize=0,loudnorm=I=-16:TP=-1.5:LRA=11,` +
+  `aresample=48000,pan=stereo|c0=c0|c1=c0[aout]`;
 
 const finalAudio = join(WORK, 'final_audio.wav');
 ff([

@@ -29,17 +29,45 @@ In accordance with portfolio anti-fabrication standards, the following table dis
 
 | Feature / Claim | Claimed State | Verification Method / Command | Status |
 | :--- | :--- | :--- | :--- |
-| **Bee API Production Host & TLS** | Requires internal Amazon Private Root CA (`PROD_ROOT_CA`) | Live HTTPS probe to `https://app-api-developer.ce.bee.amazon.dev` with and without custom CA in `scratch/probe_bee_live.js` | **VERIFIED** (Fails TLS handshake without CA; passes TLS with CA) |
-| **Bee API Authentication Status** | Unauthenticated requests return HTTP 401 | Raw HTTP probe returns `HTTP/1.1 401 Unauthorized` (`{"error":"unauthorized"}`) | **VERIFIED** (Truthfully logged; no fake auth) |
+| **Bee API Production Host & TLS** | Requires internal Amazon Private Root CA (`PROD_ROOT_CA`) | `node ops\probe-bee-live.mjs` — one process, two requests to `https://app-api-developer.ce.bee.amazon.dev/v1/me`, with and without the CA | **VERIFIED** (System trust store dies at the transport with `SELF_SIGNED_CERT_IN_CHAIN`; with `PROD_ROOT_CA` the request reaches the app) |
+| **Bee API Authentication Status** | Unauthenticated requests return HTTP 401 | `node ops\probe-bee-live.mjs` (sends no `Authorization` header) | **VERIFIED** (`HTTP 401`, body `{"error":"unauthorized"}` — no fake auth, no token in this repo) |
 | **Speaker Diarisation Reality** | Flat anonymous clusters only (`speaker: string`); no identity | Inspected official `@beeai/cli` v0.7.3 source (`sources/resources/conversations/index.ts`) | **VERIFIED** (No user profiles, no voiceprints, no wearer tag) |
 | **API Mutation Capabilities** | Facts & Todos are CRUD; Conversations are Read-Only | Inspected official CLI command and resource definitions in `@beeai/cli` v0.7.3 | **VERIFIED** (`/v1/conversations` has no POST/PUT/DELETE) |
 | **MCP Protocol Floor Enforcement** | Strictly enforces `2025-11-25` minimum over Streamable HTTP | `node ops/probe-protocol-version.mjs` against running backend | **VERIFIED** (All sub-floor versions raised to `2025-11-25`) |
-| **Unit Test Suite** | 17/17 tests passing across 3 test suites | `ops\test.cmd` (runs `tsx --test tests/**/*.test.ts`) | **VERIFIED** (All 17 tests green in 323ms) |
-| **Absence-Based Redaction** | Redacted strings never appear in serialized output | `services/bystander/tests/bystander-redaction.test.ts` | **VERIFIED** (Tested by serialized string absence) |
+| **Unit Test Suite** | 18/18 tests passing across 3 test suites | `ops\test.cmd` (runs `tsx --test tests/**/*.test.ts`) | **VERIFIED** (All 18 tests green; 320 ms on the reference run, and the figure moves a few ms run to run) |
+| **Absence-Based Redaction** | Redacted strings never appear in serialized output | `services/bystander/tests/bystander-redaction.test.ts` | **VERIFIED** (The whole returnable object is serialised, audit included — see the note below on why that wording matters) |
+| **Audit Records Carry No Removed Text** | A removal record states category, cluster, span, size and replacement — never the text it removed | `services/bystander/tests/bystander-redaction.test.ts` → `'no redaction entry carries the text it removed, in any field'`; live check with `curl http://127.0.0.1:3002/api/pipeline/101` | **VERIFIED** (Field-level check plus a scan for any 4-word run of the source speech anywhere in the payload) |
 | **Substring Safety** | Subwords like "Ann" in "annual" or "Bob" in "bobcat" never match | `services/bystander/tests/bystander-redaction.test.ts` | **VERIFIED** (Boundary-aware regex tested) |
 | **Surface Guard Against Invented Figures** | Zero hardcoded checkmarks, percentages, or fallback literals | `services/bystander/tests/surface-no-invented-claims.test.ts` | **VERIFIED** (Scans UI source; fails build on violations) |
 | **Negative Probes** | Breaking safety invariants causes tests to fail | `docs/04-agents/negative-probes-evidence.md` | **VERIFIED** (All 4 guards proven with broken/reverted pairs) |
 | **Physical Bee Wearable Hardware** | Active Bluetooth pairing and live audio ingestion on body | Hardware device paired to this machine | **UNVERIFIED** (No physical device present; operating via verified offline fixture set) |
+
+### 2.1 A leak this project shipped and then fixed
+
+The first working version of the redactor put the removed span into the audit
+record as `originalText`, so a judge reading `audit.removals` — which
+`bystander_get_transcript` and `GET /api/pipeline/:id` both return — got the
+suppressed bystander speech back verbatim, inside the record that claimed to
+have removed it. The entity reason string did the same thing a second way:
+`Third-party entity "Carol" detected`.
+
+The absence test passed the whole time, because it serialised only
+`{ redactedText, redactedUtterances }` — the two parts of the result that were
+never the problem. That is the failure mode worth naming: an absence check is
+only as good as the surface it serialises.
+
+Both leaks are gone. A removal record now carries `charCount` and `wordCount`
+instead of the text, the reason names the category rather than the match, and
+the tests were changed in two ways:
+
+1. Both absence tests now serialise the entire returnable object, keeping only
+   `rawText` (the deliberately local-only field) out of the check.
+2. A new test asserts no entry has an `originalText` field at all, and that no
+   entry contains any four-word run of the source speech.
+
+Both new guards were confirmed to have teeth by reintroducing the leak and
+watching them fail, then reverting. The audit trail shown in the demo video was
+re-recorded against the fixed service.
 
 ---
 
@@ -95,7 +123,7 @@ In accordance with portfolio anti-fabrication standards, the following table dis
 ```cmd
 ops\test.cmd
 ```
-Runs all 17 unit tests measuring absence verification, substring safety, and UI source guards, followed by a full Vite production build.
+Runs all 18 unit tests measuring absence verification, substring safety, and UI source guards, followed by a full Vite production build.
 
 ### 2. Launch Local Servers
 ```cmd
@@ -150,6 +178,7 @@ projects/04-bee-bystander/
 │   ├── run-both-detached.cmd      # Detached launcher for backend & surface
 │   ├── stop-both.cmd              # Clean process termination
 │   ├── probe-protocol-version.mjs # MCP protocol floor verification
+│   ├── probe-bee-live.mjs         # Live TLS + unauthenticated 401 probe (no credentials)
 │   └── video/                     # Automated demo video pipeline
 │       ├── generate-tts.mjs       # Edge Neural TTS narration
 │       ├── generate-cards.mjs     # 1920x1080 typography cards & lower thirds

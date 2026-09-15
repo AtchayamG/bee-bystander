@@ -10,5 +10,9 @@ ops/video/cards/
 ops/video/vo/
 ops/video/frames/
 ops/video/shots/
+ops/video/check/
+# The assembled demo master (~6.9 MB per cut). The deliverable is the YouTube
+# link in the README, not a binary re-committed on every re-cut.
+docs/06-demo-submission/*.mp4
 .DS_Store
 Thumbs.db

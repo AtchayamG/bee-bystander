@@ -25,6 +25,17 @@ const THIRD_PARTY_ENTITIES = [
 
 export class Redactor {
   /**
+   * Measures a removed span without retaining it. The only thing that leaves
+   * this function is two integers.
+   */
+  private static sizeOf(text: string): { charCount: number; wordCount: number } {
+    return {
+      charCount: text.length,
+      wordCount: text.trim().split(/\s+/).filter(Boolean).length
+    };
+  }
+
+  /**
    * Redacts a single utterance or text block against the consent ledger.
    */
   public static redactConversation(
@@ -62,7 +73,7 @@ export class Redactor {
           category: 'UNCONSENTED_SPEAKER',
           reason: `Speaker cluster "${cluster}" has consent status "${status}". Speech suppressed.`,
           span: [0, u.text.length],
-          originalText: u.text,
+          ...Redactor.sizeOf(u.text),
           replacementText: replacement
         };
         removals.push(entry);
@@ -90,7 +101,7 @@ export class Redactor {
           category: 'THIRD_PARTY_PII',
           reason: 'Third-party email address detected in transcript',
           span: [offset, offset + match.length],
-          originalText: match,
+          ...Redactor.sizeOf(match),
           replacementText: replacement
         });
         return replacement;
@@ -108,7 +119,7 @@ export class Redactor {
           category: 'THIRD_PARTY_PII',
           reason: 'Third-party telephone number detected in transcript',
           span: [offset, offset + match.length],
-          originalText: match,
+          ...Redactor.sizeOf(match),
           replacementText: replacement
         });
         return replacement;
@@ -125,9 +136,13 @@ export class Redactor {
             clusterId: cluster,
             speakerName: speakerDisplayName,
             category: 'SENSITIVE_ENTITY',
-            reason: `Third-party entity "${match}" detected in utterance`,
+            // The reason must not quote the match. It used to read
+            // `Third-party entity "${match}" detected`, which put the name
+            // straight back into the audit that had just removed it - the same
+            // leak as originalText, one line further down.
+            reason: 'A third-party entity name was detected in this utterance',
             span: [offset, offset + match.length],
-            originalText: match,
+            ...Redactor.sizeOf(match),
             replacementText: replacement
           });
           return replacement;
@@ -148,9 +163,8 @@ export class Redactor {
     let piiCount = 0;
 
     for (const r of removals) {
-      totalChars += r.originalText.length;
-      const wordCount = r.originalText.trim().split(/\s+/).filter(Boolean).length;
-      totalWords += wordCount;
+      totalChars += r.charCount;
+      totalWords += r.wordCount;
       if (r.category === 'UNCONSENTED_SPEAKER') {
         unconsentedCount++;
       } else {

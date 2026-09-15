@@ -26,7 +26,12 @@ interface RedactionEntry {
   category: string;
   reason: string;
   span: [number, number];
-  originalText: string;
+  // Not originalText. The server no longer sends the removed span, and this
+  // surface must not be able to display it even by accident: the wearer's own
+  // screen is precisely where a bystander's suppressed speech must not
+  // reappear.
+  charCount: number;
+  wordCount: number;
   replacementText: string;
 }
 

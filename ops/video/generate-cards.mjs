@@ -150,7 +150,7 @@ const CARDS = [
           <div class="rule"></div>
           <p class="meta">
             <strong>Architecture:</strong> Node.js &bull; TypeScript &bull; Express &bull; Streamable HTTP MCP &bull; Vite Surface<br>
-            <strong>Test Coverage:</strong> 17/17 unit tests passing (Absence checks, Substring safety, Surface guards)<br>
+            <strong>Test Coverage:</strong> 18/18 unit tests passing (Absence checks, Substring safety, Surface guards)<br>
             <strong>Provenance:</strong> 100% computed metrics &bull; Zero fabricated numbers &bull; Zero hardcoded claims<br>
             <strong>Entrant:</strong> Atchayam G &bull; <strong>Licence:</strong> MIT
           </p>

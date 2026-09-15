@@ -37,7 +37,7 @@ describe('Negative Probes — proving that guards fail when safety rules are bro
     // The cross-check assertion MUST fail
     assert.throws(
       () => {
-        const computed = tamperedAudit.removals.reduce((sum, r) => sum + r.originalText.length, 0);
+        const computed = tamperedAudit.removals.reduce((sum, r) => sum + r.charCount, 0);
         assert.equal(tamperedAudit.totalRedactedChars, computed);
       },
       { name: 'AssertionError' }

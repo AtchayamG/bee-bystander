@@ -75,7 +75,25 @@ export interface RedactionEntry {
   category: RedactionCategory;
   reason: string;
   span: [number, number];
-  originalText: string;
+  /**
+   * The SIZE of what was removed, never the content.
+   *
+   * This field used to be `originalText: string` - the removed span verbatim.
+   * Every redaction entry therefore carried the exact words it had just
+   * suppressed, and `bystander_get_transcript` returns `audit.removals` to its
+   * caller, so an assistant asking for a redacted transcript received the
+   * unconsented speech back inside the audit that claimed to have removed it.
+   *
+   * The redaction test did not catch it because it serialised only
+   * `{ redactedText, redactedUtterances }` and asserted absence over that -
+   * the part that passes. The audit was outside the assertion.
+   *
+   * A char and word count supports every figure the audit needs to report and
+   * reconstructs nothing. If a future consumer needs the original text, that is
+   * a reason to refuse the consumer, not to put the text back.
+   */
+  charCount: number;
+  wordCount: number;
   replacementText: string;
 }
 

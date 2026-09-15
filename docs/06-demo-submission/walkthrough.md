@@ -48,8 +48,9 @@ Bystander introduces a verifiable consent governance layer directly between ambi
 ops\test.cmd
 ```
 **Expected Output**:
-- Runs 17 unit tests across 3 suites in `services/bystander` using `tsx --test`.
-- Tests absence verification (sensitive strings never appear in serialized output).
+- Runs 18 unit tests across 3 suites in `services/bystander` using `tsx --test`.
+- Tests absence verification: the whole returnable result is serialised — audit records included — and checked for the removed text.
+- Tests that no audit record carries the text it removed, in any field, nor any four-word run of it.
 - Tests substring safety ("Ann" in "annual", "consent" in "consented", "Bob" in "bobcat").
 - Tests UI guard (`apps/surface/src/main.ts` contains no hardcoded checkmarks or invented figures).
 - Builds `apps/surface` production bundle via `vite build`.
