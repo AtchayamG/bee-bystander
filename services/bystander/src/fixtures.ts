@@ -1,5 +1,12 @@
 import type { ConversationDetail, ParticipantConsent } from './types.js';
 
+/**
+ * Verified offline fixture conversations matching official @beeai/cli v0.7.3 schema.
+ * Source schema references:
+ * - ConversationDetail: @beeai/cli v0.7.3 sources/resources/conversations/index.ts:360-376
+ * - Transcription & Utterance: @beeai/cli v0.7.3 sources/resources/conversations/index.ts:360-374
+ * - Speaker cluster string & empty speaker fallback: sources/resources/conversations/index.ts:511-513
+ */
 export const FIXTURE_CONVERSATIONS: ConversationDetail[] = [
   {
     id: 101,
@@ -67,16 +74,16 @@ export const FIXTURE_CONVERSATIONS: ConversationDetail[] = [
   },
   {
     id: 102,
-    title: 'Cafe Meeting with Ambient Bystander',
-    summary: 'Alice and Bob met at a cafe, but nearby bystander conversation was captured.',
-    short_summary: 'Cafe meeting containing unconsented background speech.',
+    title: 'Cafe Standup (Third-Party Bystander Present)',
+    summary: 'Alice and Bob had a quick standup at a cafe; background diner was captured.',
+    short_summary: 'Standup with unconsented ambient bystander speech.',
     state: 'completed',
     created_at: 1726384000000,
     updated_at: 1726384900000,
     primary_location: {
-      address: '2101 4th Ave, Seattle, WA',
-      latitude: 47.614,
-      longitude: -122.342,
+      address: '2031 7th Ave, Seattle, WA',
+      latitude: 47.615,
+      longitude: -122.338,
       created_at: 1726384000000
     },
     suggested_links: [],
@@ -89,41 +96,41 @@ export const FIXTURE_CONVERSATIONS: ConversationDetail[] = [
             id: 1,
             realtime: false,
             start: 0,
-            end: 3500,
+            end: 3800,
             spoken_at: 1726384001000,
-            text: "Hey Bob, thanks for meeting me at the coffee shop.",
+            text: "Bob, here is our table. The coffee order is ready.",
             speaker: 'SPEAKER_0',
             created_at: 1726384001000
           },
           {
             id: 2,
             realtime: false,
-            start: 3800,
-            end: 7200,
-            spoken_at: 1726384004000,
-            text: "Glad to meet up, Alice. How is the rollout going?",
-            speaker: 'SPEAKER_1',
-            created_at: 1726384004000
+            start: 4000,
+            end: 9500,
+            spoken_at: 1726384005000,
+            text: "Hey excuse me, can you pass the sugar container from your table?",
+            speaker: 'SPEAKER_2', // Unconsented bystander
+            created_at: 1726384005000
           },
           {
             id: 3,
             realtime: false,
-            start: 7500,
-            end: 15400,
-            spoken_at: 1726384008000,
-            text: "Excuse me Dr. Evans, my patient ID is 8841 and my biopsy test results came back positive.",
-            speaker: 'SPEAKER_2',
-            created_at: 1726384008000
+            start: 9800,
+            end: 12200,
+            spoken_at: 1726384010000,
+            text: "Sure, here you go.",
+            speaker: 'SPEAKER_1',
+            created_at: 1726384010000
           },
           {
             id: 4,
             realtime: false,
-            start: 15800,
-            end: 20100,
-            spoken_at: 1726384016000,
-            text: "The cafe is quite loud today with people at adjacent tables.",
+            start: 12500,
+            end: 18000,
+            spoken_at: 1726384013000,
+            text: "Okay, let's discuss our deployment plan for the consent interceptor.",
             speaker: 'SPEAKER_0',
-            created_at: 1726384016000
+            created_at: 1726384013000
           }
         ]
       }
@@ -131,16 +138,16 @@ export const FIXTURE_CONVERSATIONS: ConversationDetail[] = [
   },
   {
     id: 103,
-    title: 'Executive Discussion with Explicit Revocation',
-    summary: 'Session where a participant explicitly revoked consent upon seeing the recorder.',
-    short_summary: 'Recorded session with active consent revocation.',
+    title: 'Confidential Client Negotiation (Consent Revoked Mid-Meeting)',
+    summary: 'Meeting in which participant revoked consent during capture.',
+    short_summary: 'Discussion halted due to explicit revocation.',
     state: 'completed',
     created_at: 1726388000000,
     updated_at: 1726388600000,
     primary_location: {
-      address: 'Conference Room 4B',
-      latitude: 47.622,
-      longitude: -122.336,
+      address: '500 9th Ave N, Seattle, WA',
+      latitude: 47.623,
+      longitude: -122.339,
       created_at: 1726388000000
     },
     suggested_links: [],
@@ -178,6 +185,221 @@ export const FIXTURE_CONVERSATIONS: ConversationDetail[] = [
             text: "Understood Bob, stopping capture immediately.",
             speaker: 'SPEAKER_0',
             created_at: 1726388011000
+          }
+        ]
+      }
+    ]
+  },
+  // Fixture 104: Empty speaker string returned by cloud ASR
+  // Schema citation: @beeai/cli v0.7.3 sources/resources/conversations/index.ts:366 and index.ts:511-513
+  {
+    id: 104,
+    title: 'Hallway Acoustic Artifact (Empty Speaker String)',
+    summary: 'Wearer walking down corridor where ambient acoustic segment had empty speaker string.',
+    short_summary: 'Corridor transit with unassigned acoustic segment.',
+    state: 'completed',
+    created_at: 1726391000000,
+    updated_at: 1726391400000,
+    primary_location: {
+      address: '410 Terry Ave N, Seattle, WA',
+      latitude: 47.622,
+      longitude: -122.336,
+      created_at: 1726391000000
+    },
+    suggested_links: [],
+    transcriptions: [
+      {
+        id: 1004,
+        realtime: false,
+        utterances: [
+          {
+            id: 1,
+            realtime: false,
+            start: 0,
+            end: 2500,
+            spoken_at: 1726391001000,
+            text: "Heading down the hallway to conference room 402.",
+            speaker: 'SPEAKER_0',
+            created_at: 1726391001000
+          },
+          {
+            id: 2,
+            realtime: false,
+            start: 3000,
+            end: 5800,
+            spoken_at: 1726391004000,
+            text: "Heavy door closing and faint echo in background corridor.",
+            // Empty string as returned by cloud diarisation per sources/resources/conversations/index.ts:512
+            speaker: '',
+            created_at: 1726391004000
+          },
+          {
+            id: 3,
+            realtime: false,
+            start: 6200,
+            end: 8500,
+            spoken_at: 1726391007000,
+            text: "Arrived at conference room 402 now.",
+            speaker: 'SPEAKER_0',
+            created_at: 1726391007000
+          }
+        ]
+      }
+    ]
+  },
+  // Fixture 105: Every speaker is UNKNOWN
+  // Schema citation: @beeai/cli v0.7.3 sources/resources/conversations/index.ts:360-376
+  {
+    id: 105,
+    title: 'Elevator Lobby (All Speakers Unenrolled / Unknown)',
+    summary: 'Wearer recorded voices in public elevator lobby where no speakers are enrolled.',
+    short_summary: 'Lobby capture with entirely unconsented participants.',
+    state: 'completed',
+    created_at: 1726395000000,
+    updated_at: 1726395300000,
+    primary_location: {
+      address: '2031 7th Ave, Seattle, WA',
+      latitude: 47.615,
+      longitude: -122.338,
+      created_at: 1726395000000
+    },
+    suggested_links: [],
+    transcriptions: [
+      {
+        id: 1005,
+        realtime: false,
+        utterances: [
+          {
+            id: 1,
+            realtime: false,
+            start: 0,
+            end: 3500,
+            spoken_at: 1726395001000,
+            text: "Are you taking the elevator down to the parking garage level P2?",
+            speaker: 'SPEAKER_7', // Unenrolled cluster -> UNKNOWN
+            created_at: 1726395001000
+          },
+          {
+            id: 2,
+            realtime: false,
+            start: 3800,
+            end: 7200,
+            spoken_at: 1726395005000,
+            text: "Yes, I parked near the north elevator bank on P2.",
+            speaker: 'SPEAKER_8', // Unenrolled cluster -> UNKNOWN
+            created_at: 1726395005000
+          }
+        ]
+      }
+    ]
+  },
+  // Fixture 106: Participant explicitly revoking consent mid-conversation
+  // Schema citation: @beeai/cli v0.7.3 sources/resources/conversations/index.ts:360-376
+  {
+    id: 106,
+    title: 'Client Briefing (Revoked Participant Mid-Way)',
+    summary: 'Design review where participant Dave explicitly asked not to record.',
+    short_summary: 'Design review with verbal consent revocation.',
+    state: 'completed',
+    created_at: 1726398000000,
+    updated_at: 1726398500000,
+    primary_location: {
+      address: '410 Terry Ave N, Seattle, WA',
+      latitude: 47.622,
+      longitude: -122.336,
+      created_at: 1726398000000
+    },
+    suggested_links: [],
+    transcriptions: [
+      {
+        id: 1006,
+        realtime: false,
+        utterances: [
+          {
+            id: 1,
+            realtime: false,
+            start: 0,
+            end: 3200,
+            spoken_at: 1726398001000,
+            text: "Welcome Dave, let's review the draft design proposal.",
+            speaker: 'SPEAKER_0',
+            created_at: 1726398001000
+          },
+          {
+            id: 2,
+            realtime: false,
+            start: 3500,
+            end: 9800,
+            spoken_at: 1726398005000,
+            text: "Thanks Alice. But before we discuss pricing, stop recording, I revoke consent for audio capture.",
+            speaker: 'SPEAKER_4', // Participant revoking consent
+            created_at: 1726398005000
+          },
+          {
+            id: 3,
+            realtime: false,
+            start: 10200,
+            end: 13000,
+            spoken_at: 1726398011000,
+            text: "Acknowledged Dave, recording terminated.",
+            speaker: 'SPEAKER_0',
+            created_at: 1726398011000
+          }
+        ]
+      }
+    ]
+  },
+  // Fixture 107: Overlapping PII inside one utterance (adjacent email, phone, and entity)
+  // Schema citation: @beeai/cli v0.7.3 sources/resources/conversations/index.ts:360-376
+  {
+    id: 107,
+    title: 'Clinical Consultation (Overlapping PII in Single Utterance)',
+    summary: 'Medical consultation containing adjacent email, phone number, and entity mentions.',
+    short_summary: 'Clinical consultation with dense overlapping PII.',
+    state: 'completed',
+    created_at: 1726401000000,
+    updated_at: 1726401800000,
+    primary_location: {
+      address: '1100 9th Ave, Seattle, WA',
+      latitude: 47.611,
+      longitude: -122.327,
+      created_at: 1726401000000
+    },
+    suggested_links: [],
+    transcriptions: [
+      {
+        id: 1007,
+        realtime: false,
+        utterances: [
+          {
+            id: 1,
+            realtime: false,
+            start: 0,
+            end: 3500,
+            spoken_at: 1726401001000,
+            text: "Doctor, what are the next steps for the clinical follow-up?",
+            speaker: 'SPEAKER_0',
+            created_at: 1726401001000
+          },
+          {
+            id: 2,
+            realtime: false,
+            start: 3800,
+            end: 12500,
+            spoken_at: 1726401005000,
+            text: "Please coordinate with Dr. Evans at evans@mercy-general.org or call 555-0144 to schedule the biopsy review.",
+            speaker: 'SPEAKER_1',
+            created_at: 1726401005000
+          },
+          {
+            id: 3,
+            realtime: false,
+            start: 12800,
+            end: 15900,
+            spoken_at: 1726401014000,
+            text: "I will contact Dr. Evans right away.",
+            speaker: 'SPEAKER_0',
+            created_at: 1726401014000
           }
         ]
       }

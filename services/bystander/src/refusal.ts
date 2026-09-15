@@ -62,7 +62,22 @@ export class RefusalEngine {
       }
     }
 
-    // 3. Unconsented participant check
+    // 3. Ambiguous attribution check (missing or empty speaker)
+    for (const u of utterances) {
+      if (!u.speaker || u.speaker.trim() === '' || u.speaker === 'unknown') {
+        return {
+          refused: true,
+          code: 'REFUSAL_AMBIGUOUS_ATTRIBUTION',
+          reason: `Utterance ${u.id} lacks definitive acoustic speaker attribution and cannot be verified against the consent ledger.`,
+          details: {
+            triggerUtteranceId: u.id,
+            explanation: `Bee transcript returned an unlabelled utterance ("${u.text.slice(0, 40)}..."). Refusing summary due to attribution ambiguity.`
+          }
+        };
+      }
+    }
+
+    // 4. Unconsented participant check
     // If the conversation contains utterances from UNKNOWN or unconsented clusters
     if (audit.unconsentedSpeakerCount > 0) {
       const firstUnconsented = audit.removals.find(
@@ -79,21 +94,6 @@ export class RefusalEngine {
           explanation: `Bystander refuses to summarize conversations containing third-party voices whose consent has not been confirmed.`
         }
       };
-    }
-
-    // 4. Ambiguous attribution check (missing or empty speaker)
-    for (const u of utterances) {
-      if (!u.speaker || u.speaker.trim() === '' || u.speaker === 'unknown') {
-        return {
-          refused: true,
-          code: 'REFUSAL_AMBIGUOUS_ATTRIBUTION',
-          reason: `Utterance ${u.id} lacks definitive acoustic speaker attribution and cannot be verified against the consent ledger.`,
-          details: {
-            triggerUtteranceId: u.id,
-            explanation: `Bee transcript returned an unlabelled utterance ("${u.text.slice(0, 40)}..."). Refusing summary due to attribution ambiguity.`
-          }
-        };
-      }
     }
 
     return { refused: false };

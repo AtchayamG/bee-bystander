@@ -15,7 +15,7 @@ const PHONE_REGEX = /\b(?:\+?1[-.\s]?)?(?:\(?([0-9]{3})\)?[-.\s]?)?([0-9]{3})[-.
 // Named entities representing third parties or sensitive subjects
 const THIRD_PARTY_ENTITIES = [
   'Carol',
-  'Dr\.\s*Evans',
+  'Dr\\.\\s*Evans',
   'Charlie',
   'Dave',
   'Eve',
