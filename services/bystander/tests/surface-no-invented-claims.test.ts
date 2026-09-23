@@ -124,4 +124,11 @@ describe('apps/surface guard against hardcoded claims, checkmarks, and invented 
     assert.ok(allCleanTs.includes('audit.totalRedactedWords'));
     assert.ok(allCleanTs.includes('audit.removals.length'));
   });
+
+  it('labels a signed-in local proxy and preserves a live-empty account without fixtures', () => {
+    assert.ok(allCleanTs.includes("conversationMode === 'live' && rawConversations.length === 0"));
+    assert.ok(allCleanTs.includes("status?.beeApi.viaProxy ? 'Signed in via local bee proxy'"));
+    assert.ok(allCleanTs.includes("conversationsViaProxy ? 'Signed in via local bee proxy'"));
+    assert.ok(allCleanTs.includes('Signed in to Bee — no conversations yet.'));
+  });
 });

@@ -9,12 +9,15 @@ that backs it is named.
 
 ## What it reads
 
-- **Your Bee conversations**, from the Bee developer API
-  (`https://app-api-developer.ce.bee.amazon.dev`), using a token *you* supply
-  in a local `.env` file (`BEE_TOKEN`). That host is the only one the service
-  contacts. (`services/bystander/src/client.ts`)
-- **Nothing, when no token is set.** It then works on the fixture
-  conversations bundled in the repository and says so on screen.
+- **Your Bee conversations**, either from the Bee developer API
+  (`https://app-api-developer.ce.bee.amazon.dev`) using an optional direct
+  `BEE_TOKEN`, or through the official Bee CLI's local proxy at
+  `http://127.0.0.1:8787`. The proxy keeps CLI authentication local; Bystander
+  does not read or export its credential. Plain HTTP is accepted only on
+  loopback. (`services/bystander/src/client.ts`)
+- **Bundled fixture conversations** when the configured Bee connection is not
+  authenticated. A successful live response with an empty conversation list
+  remains live and empty; it is never replaced with fixtures.
 
 ## What it stores
 
@@ -34,8 +37,9 @@ name you choose to enter.
 
 ## What leaves your machine
 
-Only the requests to the Bee API described above, authenticated with your own
-token. No analytics, no telemetry, no crash reporting, no third-party
+Only the requests to the Bee API described above. In proxy mode the official
+Bee CLI authenticates the local forwarding request; Bystander receives no raw
+credential. No analytics, no telemetry, no crash reporting, no third-party
 services, and no AI model calls: redaction and refusal are deterministic code
 that runs locally.
 
@@ -77,7 +81,8 @@ reverts to `UNKNOWN`, which means refusal.
 
 - Any program already running on your computer can call the service; there is
   no local login. The protection is against web pages and other machines.
-- Your Bee token sits in a plain `.env` file on your disk.
+- If you choose direct-token mode, your Bee token sits in a plain `.env` file
+  on your disk. Proxy mode does not require a token in `.env`.
 - This is open-source software under the MIT licence, provided as is.
 
 ## Contact

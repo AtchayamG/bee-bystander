@@ -100,6 +100,7 @@ export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
 
   // REST API Routes
   app.get('/api/status', async (_req: Request, res: Response) => {
+    if (client.usesLocalProxy) await client.fetchMe();
     const status = client.getStatus();
     res.json({
       service: 'Bystander Service',

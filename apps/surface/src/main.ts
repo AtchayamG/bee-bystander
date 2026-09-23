@@ -124,6 +124,7 @@ interface AppStatus {
     endpoint: string;
     code: number;
     message: string;
+    viaProxy: boolean;
   };
   participants: ParticipantConsent[];
 }
@@ -135,6 +136,9 @@ let currentRoute: ViewRoute = 'capture';
 let currentScenarioId = 101;
 let pipelineData: PipelineResult | null = null;
 let rawConversations: Array<{ id: number; title: string }> = [];
+let conversationMode: 'live' | 'fixture' = 'fixture';
+let conversationsViaProxy = false;
+let conversationsApiStatus: { code: number; message: string } = { code: 0, message: 'not reported' };
 let allEvents: EventRecord[] = [];
 let storedAuditRecords: StoredAuditRecord[] = [];
 let auditSelectedScenarioId = 101;
@@ -175,10 +179,17 @@ async function loadConversations(): Promise<void> {
     const res = await fetch('/api/conversations');
     if (res.ok) {
       const data = await res.json();
-      rawConversations = data.conversations.map((c: any) => ({
+      conversationMode = data.mode === 'live' ? 'live' : 'fixture';
+      conversationsViaProxy = data.viaProxy === true;
+      conversationsApiStatus = data.apiStatus || conversationsApiStatus;
+      rawConversations = (data.conversations || []).map((c: any) => ({
         id: c.id,
         title: c.title
       }));
+      if (rawConversations.length === 0 && conversationMode === 'live') pipelineData = null;
+      else if (!rawConversations.some((c) => c.id === currentScenarioId) && rawConversations.length) {
+        currentScenarioId = rawConversations[0].id;
+      }
     }
   } catch (err) {
     console.error('Failed to load conversations:', err);
@@ -425,6 +436,17 @@ async function triggerImmediateSweep(): Promise<void> {
 // VIEW 1: Capture View
 function renderCaptureView(): string {
   if (!pipelineData) {
+    if (conversationMode === 'live' && rawConversations.length === 0) {
+      return `
+        <section class="panel">
+          <div class="panel-header">
+            <div class="panel-title">${conversationsViaProxy ? 'Signed in via local bee proxy' : 'Live Bee data'}</div>
+            <div class="status-badge live">API ${formatField(conversationsApiStatus.code)}: ${formatField(conversationsApiStatus.message)}</div>
+          </div>
+          <div class="panel-body">Signed in to Bee — no conversations yet.</div>
+        </section>
+      `;
+    }
     return '<div class="metric-card">Loading pipeline capture stream...</div>';
   }
 
@@ -450,7 +472,7 @@ function renderCaptureView(): string {
         </select>
       </div>
       <div class="status-badge ${data.mode === 'live' ? 'live' : ''}">
-        API ${formatField(data.apiStatus.code)}: ${formatField(data.apiStatus.message)}
+        ${conversationsViaProxy && data.mode === 'live' ? 'Signed in via local bee proxy' : `API ${formatField(data.apiStatus.code)}: ${formatField(data.apiStatus.message)}`}
       </div>
     </div>
 
@@ -990,7 +1012,7 @@ function renderSettingsView(): string {
           <div class="panel-body">
             <div style="margin-bottom: 14px;">
               <span class="status-badge ${isLive ? 'live' : ''}">
-                ${isLive ? 'Connected to Bee API' : 'Local fixture mode'}
+                ${status?.beeApi.viaProxy ? 'Signed in via local bee proxy' : isLive ? 'Connected to Bee API' : 'Local fixture mode'}
               </span>
             </div>
             <div style="font-size:13px; margin-bottom: 8px;">
@@ -1000,7 +1022,7 @@ function renderSettingsView(): string {
               <strong>Upstream Status:</strong> <code>${formatField(status?.beeApi.message)}</code>
             </div>
             <p style="font-size: 11px; color: var(--text-dim); margin-top: 14px;">
-              Honest Fallback Guard: When BEE_TOKEN is unset, Bystander uses local fixtures and reports genuine HTTP 401 status. Zero fabricated tokens.
+              Bee proxy mode uses the local bee CLI authentication. Without a successful upstream sign-in, Bystander clearly labels its bundled conversations as fixtures.
             </p>
           </div>
         </section>
@@ -1277,7 +1299,10 @@ function bindEventListeners(): void {
 async function handleRouteChange(): Promise<void> {
   currentRoute = parseRoute();
   if (currentRoute === 'capture') {
-    if (!pipelineData || pipelineData.conversationId !== currentScenarioId) {
+    if (conversationMode === 'live' && rawConversations.length === 0) {
+      pipelineData = null;
+      renderApp();
+    } else if (!pipelineData || pipelineData.conversationId !== currentScenarioId) {
       await loadPipeline(currentScenarioId);
     } else {
       renderApp();
