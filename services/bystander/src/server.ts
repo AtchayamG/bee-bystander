@@ -174,7 +174,10 @@ export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
     ledger.setConsent(cleanClusterId, cleanName, role, status, notes);
     db.logEvent('CONSENT_ENROL', {
       clusterId: cleanClusterId,
-      detail: `Enrolled participant "${cleanName}" (${cleanClusterId}) as ${role} with status ${status}`
+      // Cluster id only. The name lives in the participants row, which un-enrolment
+      // deletes; the events log is append-only, so a name written here would outlive
+      // the person's withdrawal. See tests/withdrawal-erasure.test.ts.
+      detail: `Enrolled ${cleanClusterId} as ${role} with status ${status}`
     });
 
     return res.status(201).json({
@@ -257,7 +260,8 @@ export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
     ledger.unenrol(clusterId);
     db.logEvent('CONSENT_UNENROL', {
       clusterId,
-      detail: `Un-enrolled participant "${existing?.name ?? clusterId}"; cluster reverted to UNKNOWN (refusal)`
+      // Never the name: this is the event that records someone asking to be forgotten.
+      detail: `Un-enrolled ${clusterId}; cluster reverted to UNKNOWN (refusal)`
     });
 
     return res.json({

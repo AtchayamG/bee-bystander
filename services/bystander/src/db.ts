@@ -52,6 +52,9 @@ export interface DbEventRow {
 
 export function runMigrations(db: DatabaseType): void {
   db.pragma('journal_mode = WAL');
+  // Zero deleted content instead of leaving it in free pages. Without this, a
+  // withdrawn participant's name stayed readable in the file after DELETE.
+  db.pragma('secure_delete = ON');
   db.pragma('foreign_keys = ON');
 
   // 1. Participants table
