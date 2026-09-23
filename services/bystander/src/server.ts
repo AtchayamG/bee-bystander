@@ -1,5 +1,5 @@
 import express, { Request, Response } from 'express';
-import cors from 'cors';
+import { corsForAllowedOrigins, originGuard } from './origin-guard.js';
 import { randomUUID } from 'node:crypto';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { BeeApiClient } from './client.js';
@@ -85,7 +85,10 @@ export function formatAuditRecordsCsv(records: StoredAuditRecord[]): string {
 
 export function createServer(dbPath: string = DEFAULT_DB_PATH): ServerContext {
   const app = express();
-  app.use(cors({ origin: '*' }));
+  // Refuse foreign browser origins and rebound Host names before any route runs.
+  // See origin-guard.ts for why CORS headers alone are not enough.
+  app.use(originGuard());
+  app.use(corsForAllowedOrigins());
   app.use(express.json());
 
   const db = new BystanderDatabase(dbPath, DEFAULT_LEDGER);
