@@ -94,7 +94,7 @@ real HTTP 401, reproducible with `node ops/probe-bee-live.mjs`, which also shows
 that the host needs Amazon's private root CA before the connection survives the
 handshake at all. A second probe measures Bee's own MCP server and finds it
 answers a 2025-11-25 initialize with 2024-11-05 — the same silent downgrade this
-project had, in the platform's own server. 48 tests across 10 suites; every
+project had, in the platform's own server. 63 tests across 13 suites; every
 number on screen is computed, with guard tests that fail if a fallback, a
 percentage or an asserted database literal is introduced.
 
