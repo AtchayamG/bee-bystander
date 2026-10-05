@@ -39,7 +39,7 @@ In accordance with portfolio anti-fabrication standards, the following table dis
 | **API Mutation Capabilities** | Facts & Todos are CRUD; Conversations are Read-Only | Inspected official CLI command and resource definitions in `@beeai/cli` v0.7.3 | **VERIFIED** (`/v1/conversations` has no POST/PUT/DELETE) |
 | **MCP Protocol Floor Enforcement** | Strictly enforces `2025-11-25` minimum over Streamable HTTP | `node ops/probe-protocol-version.mjs` against running backend | **VERIFIED** (All sub-floor versions raised to `2025-11-25`) |
 | **Bee's Own MCP Server Does Not Hold That Floor** | `bee mcp serve` answers a `2025-11-25` request with `2024-11-05`, and exposes 34 tools | `node ops/probe-bee-mcp-tools.mjs` — spawns `npx -y @beeai/cli@0.7.3 mcp serve`, initialises over stdio, lists tools, sends no credential | **VERIFIED** (Measured, not read from docs; see friction log Entry 5. `tools/list` needs no auth, so a judge with no Bee account can re-run it) |
-| **Unit Test Suite** | 57 tests across 12 test files, plus `tsc --noEmit` | `ops\test.cmd` (runs `tsx --test tests/**/*.test.ts`) | **VERIFIED 2026-09-23** (57/57 green and the typecheck clean. This row said 18 tests across 3 suites until then — true when written, stale for weeks after. `tsx` strips types without checking them, so the typecheck is a separate step and is run separately) |
+| **Unit Test Suite** | 63 tests across 13 test files, plus `tsc --noEmit` | `ops\test.cmd` (runs `tsx --test tests/**/*.test.ts`) | **VERIFIED 2026-10-05** (63/63 green and the typecheck clean; 57 on 2026-09-23 before the local-proxy tests. This row said 18 tests across 3 suites until then — true when written, stale for weeks after. `tsx` strips types without checking them, so the typecheck is a separate step and is run separately) |
 | **Absence-Based Redaction** | Redacted strings never appear in serialized output | `services/bystander/tests/bystander-redaction.test.ts` | **VERIFIED** (The whole returnable object is serialised, audit included — see the note below on why that wording matters) |
 | **Audit Records Carry No Removed Text** | A removal record states category, cluster, span, size and replacement — never the text it removed | `services/bystander/tests/bystander-redaction.test.ts` → `'no redaction entry carries the text it removed, in any field'`; live check with `curl http://127.0.0.1:3002/api/pipeline/101` | **VERIFIED** (Field-level check plus a scan for any 4-word run of the source speech anywhere in the payload) |
 | **Substring Safety** | Subwords like "Ann" in "annual" or "Bob" in "bobcat" never match | `services/bystander/tests/bystander-redaction.test.ts` | **VERIFIED** (Boundary-aware regex tested) |
@@ -128,7 +128,7 @@ re-recorded against the fixed service.
 ```cmd
 ops\test.cmd
 ```
-Runs the full suite (57 tests: absence verification, substring safety, UI source guards, persistence, retention, the MCP client flow, negative probes and the cross-origin guard), followed by a full Vite production build.
+Runs the full suite (63 tests: absence verification, substring safety, UI source guards, persistence, retention, the MCP client flow, negative probes and the cross-origin guard), followed by a full Vite production build.
 
 ### 2. Launch Local Servers
 ```cmd
